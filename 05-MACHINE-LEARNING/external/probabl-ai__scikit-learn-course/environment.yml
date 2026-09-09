@@ -1,0 +1,17 @@
+name: scikit-learn-course
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+  - scikit-learn == 1.8
+  - pandas >= 1
+  - matplotlib-base
+  - seaborn >= 0.13
+  - skrub
+  - jupyterlab
+  - notebook
+  - plotly >= 5.10
+  - IPython
+  - packaging
