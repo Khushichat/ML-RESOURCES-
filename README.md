@@ -1,5 +1,9 @@
 # Machine Learning Study Resources
 
+## Structured roadmap
+
+Start with the [AI/ML master roadmap](00-START-HERE/master-roadmap.md), then follow the numbered learning tracks. Each track contains an index of original repositories, official documentation, and suggested study order.
+
 A curated list of free, legitimate machine learning books and study material available online. Organized by level and topic. All links go to official author/publisher pages — please respect each resource's license terms.
 
 ## How to use this repo

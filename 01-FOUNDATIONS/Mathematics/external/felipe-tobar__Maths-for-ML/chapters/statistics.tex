@@ -1,0 +1,842 @@
+%!TEX root = ../lecture_notes.tex
+
+
+\section{Statistics}
+\label{cap:stas}
+
+
+
+\subsection{The statistical model}
+\label{cap:stats_SM}
+
+
+This part of the course focuses on \emph{mathematical statistics}, a methodological approach to inference based on probability, algebra, geometry, optimisation and measure theory. In this setup, we assume the existence of a dataset generated from an unknown \emph{statistical model}, aka probabilistic or generative model. Our objective is to use the data to estimate such model (and in particular its parameters) to ultimately learn the underlying properties of the data generating process and make predictions.
+
+\begin{definition} [Statistical model]
+A statistical model is a set of probability distribution that can be considered as \emph{candidates} for the data-generating mechanism. 
+\end{definition}
+
+In some cases, the statistical model can be \emph{parametric}, that is, represented by a \textbf{finite} set of parameters. This includes the Normal distribution, which is parametrised by its mean and variance. In such cases, inference boils down to identifying the parameters. Furthermore, we will consider a dataset with elements $x$ belonging to an abstract space $\mathfrak{X}$, where typically $\mathfrak{X} = \mathbb{R}^n$, and where $x$ is the realisation of an RV $X\in\mathfrak{X}$. The statistical model can also be interpreted as the space of the possible hypotheses that explain the observed data. 
+
+The main aim of this part is statistical inference, that is, given an observation $x$, what is the distribution of $X$, or at least some of its features? To answer this question we will restrict ourselves to parametric statistical models; this requires the rigorous definition of the parameters and their space. 
+
+\begin{definition}[Parameters and parameter space] A parameter is a fixed but unknown quantity that specifies a feature of a random variable's distribution (e.g., its mean, variance, or proportion). Parameters will be denoted with the symbol $\theta\in\Omega$, where $\Omega$ is the set of all possible values for the parameter called \emph{parameter space}.
+\end{definition}
+
+We denote the parametric family $\mathcal{P}$ as
+\[\mathcal{P} = \{\mathcal{P}_\theta | \theta \in \Omega \},\]
+where $\mathcal{P}_\theta $ is a probability distribution \emph{indexed} by a parameter $\theta \in \Omega$. We will consider finite-dimensional $\Omega$, that is, $\Omega \subseteq \mathbb{R}^n$. Therefore, we denote:
+\[\theta = [\theta_1, ..., \theta_n]^\top. \]
+
+In summary:
+
+\begin{itemize}
+    \item $\theta$ is the parameter to be estimated from data
+    \item $\Omega$ is the parameter space, where $\Omega \subseteq \mathbb{R}^n$
+    \item $\mathcal{P}_\theta$ is probability over  $\mathfrak{X}$ (as a function of $\theta$)
+    \item ${X}$ is a RV in $\mathfrak{X}$
+    \item $x$ is the data, a realisation of $X$ and a generic element of $\mathfrak{X}$.
+\end{itemize}
+\begin{example}[Computer manufacturer]
+A computer manufacturer wishes to estimate the lifetime of a particular component in its computers. To do this, data is first collected from computers that have been used under normal conditions. After consulting with experts, they decide to use a normal distribution to model the time it will take for the component of interest to fail. The useful life of the components is then modelled with an average lifetime $\theta$ and variance $\sigma^2$, with $\theta$ and $\sigma^{2}$  unknown parameters. If there are $N$ components, the random variables that model the useful life of each component will be identified as 
+$X_1,\ldots,X_N$, with $X_i \sim \mathcal{N}(\theta,\sigma^{2}), \forall i=1,\ldots,N$. What do you think of this model?
+\end{example}
+
+Statistical inference is a tool that allows us to solve a number of data-driven challenges. The most relevant ones involve identification, that is, to discover the model that generated the data, and prediction, where we estimate a quantity that has not yet been observed. Needless to say, a statistically-oriented approach to these challenges requires appropriately modelling the associated uncertainty.
+
+\subsection{Statistics}
+
+The initial setup in statistical inference features, in addition to our own assumptions, an observation dataset. Therefore, the first course of action is to apply transformations to the data; this underpins the construction of the so called \emph{statistics}. 
+
+
+\begin{definition}[Statistic]
+\label{def:estadístico}
+Let $(\cT,\cA,\mu)$ be a probability space and $X\in\cX$ a RV with parametric distribution $\cP = \{P_\theta\ \mid\ \theta\in\Theta\}$. A statistic is a function of the realisation $X=x$ that does not depend form the parameter $\theta$ (and the distribution $P_\theta$).
+\begin{align}
+\nonumber
+	T:\ &\cX \rightarrow \cT\\
+\nonumber
+	&x\mapsto T(x).
+\end{align} 
+
+\end{definition}
+
+\begin{remark}
+It is critical to understand the difference between the value of the statistic $T(x)$ and the application of the function $T(\cdot)$ to the RV $X$. The former is a “fixed” value, while the latter is a random variable with its own probability distribution induced by $P_\theta$ and $T(\cdot)$. 
+\end{remark}
+
+
+Some example statistics are: 
+\begin{equation}
+\nonumber
+	T(x) = \frac{1}{n}\sum_{i=1}^nx_i,\qquad T'(x) = x, \qquad T''(x) = \min(x), \qquad T'''(x) = c\in \mathbb{R}.
+\end{equation}
+
+\paragraph{Sufficiency}
+The objective of a statistic is to encapsulate or summarize the information contained in a sample $x = (x_1,x_2,\ldots,x_n)$ that is useful for determining parameters of the distribution of $X$. Therefore, the identity function ---or even the mean in some cases--- seems to fulfil this mission, at least intuitively. This is because, in practice, we want to extract as much information as possible from the data; this is achieved by the statistic $T$ (which summarizes all the data) and the statistic $T'$ (which contains all the data). On the contrary, the statistic $T''$ loses information, since it only retains the minimum value of all the data, thus losing the representation of, e.g., the dispersion of the sample. The same analysis can be made for the constant statistic $T'''$, which contains no information from the data whatsoever.
+
+Informally, the idea of \emph{sufficiency} of a statistic wrt a parameter can be expressed as
+\begin{displayquote}[Ronald Fisher, On the mathematical foundations of theoretical statistics (1922)] \it
+“…no other statistic that can be calculated from the same sample provides any additional information as to the value of the parameter.”
+\end{displayquote}
+
+A formal definition is 
+\begin{definition}[Sufficient statistic]
+\label{def:estadístico_suficiente}
+Let $(S,\cA,\mu)$ be a probability space and  $X\in\cX$ a RV with parametric distribution $\cP = \{P_\theta \mid \theta\in\Theta\}$. We say that the function $T:\cX\rightarrow\cT$ is a sufficient statistic for $\theta$ (or for $X$, or for $\cP$) if the conditional distribution $X|T(X)$ does not depend on the parameter  $\theta$, that is, 
+\begin{align}
+\nonumber
+	P_\theta(X\in A | T(X)),\ A\in\cB(X), \text{does not depend on} \theta.
+\end{align} 
+\end{definition}
+
+
+\begin{example}[Trivial sufficient statistic]
+	\label{ex:suficiencia_trivial}
+	For a given parametric family $\cP$, the statistic defined by
+	\begin{equation}
+	\nonumber
+		T(x) = x,
+	\end{equation}
+is a sufficient statistic. Indeed, $P_\theta(X\in A|X=x) = \ind_{A}(x)$ does not depend on the parameter $\theta$. 
+\end{example}
+
+\begin{example}[Sufficient statistic for a Bernoulli RV]
+	Let $x=(x_1,\ldots,x_n) \sim \ber(\theta)$, $\theta \in \Theta = [0,1]$, that is
+	\begin{equation}
+	\nonumber
+		P_\theta(X=x) = \theta^{\sum x_i}(1-\theta)^{n-\sum x_i}.
+	\end{equation}
+	Observe that $T(x) = \sum\limits_{i=1}^{n} x_i$ is a sufficient statistic for $\theta$. In fact (by definition):  
+	\begin{alignat*}{3}
+		P(X=x|T(X)=t) 	&= \frac{P(T(X)=t| X=x )P( X=x )}{P(T(X)=t)} \quad&&\text{(Bayes thm)}\\
+						&= \frac{\ind_{T(x)=t}\theta^{\sum x_i}(1-\theta)^{n-\sum x_i}}{\binom{n}{t}\theta^t(1-\theta)^{n-t}} &&\text{(model, and sum of Bernoulli is  Binomial)}\\
+						&= \ind_{T(x)=t} \binom{n}{t}^{-1} && \text{(since $T(x)=t$)}
+	\end{alignat*}
+	Therefore, $T(x)=\sum\limits_{i=1}^{n} x_i$ is a sufficient statistic.
+\end{example}
+
+In practice, sufficiency is no assessed by definition, but via a result known as Fisher-Neyman theorem. This will be left for personal study. 
+
+
+
+\subsection{Estimators}
+
+We now focus on a particular class of statistics that enables parameter estimation.
+
+\begin{definition}[Estimator]
+    Let $g:\Omega\rightarrow \mathbb{R}^n$, a function of the unknown parameter. An estimator of $g$ is a statistic $\hat{g}:\mathfrak{X}\rightarrow g(\Omega)$. We will say that $\hat{g}(x)$ is the estimation of $g(\theta)$. 
+\end{definition}
+
+\begin{remark}
+    Estimators are particular instances of statistics: they are functions of the data with an image space that is equal to the image space of $\Omega$ through $g(\cdot)$.
+\end{remark}
+
+\begin{remark}
+    Estimators can can be used to identify parameters, e.g., when $g(\theta)=\theta$, or other related relevant quantities. For instance, for the Gaussian model, where the parameter is given by $\theta = [\mu,\sigma^2]$, we might be interested in estimating the 95\% confidence interval, given by
+    \begin{equation}
+        g(\theta) = [\mu - 2\sigma,\mu + 2\sigma].
+    \end{equation}
+\end{remark}
+
+\begin{example}[Estimator for the mean of a Gaussian RV]
+	\label{ex:estimador_media}
+	Let us consider  $X = (X_1,\ldots,X_n)\sim\cN(\mu,\sigma^2)$. An estimator of  $g(\theta) = g(\mu,\sigma) = \mu$ is the statistic
+	\begin{equation}
+	\nonumber
+		\gh(X) = \frac{1}{n}\sum_{i=1}^nX_i.
+	\end{equation} 
+\end{example}
+
+
+
+\subsubsection{Unbiased estimators} Estimators, being a deterministic function of the RV $X$, are themselves RVs. Therefore, we can assess an estimator in terms of its mean: we would ideally want that an estimator for $g(\theta)$ has a mean equal to that quantity.
+
+
+\begin{definition}[Unbiased estimator]
+	\label{def:estimador_insesgado}
+	Let $\ghX$ be an estimator of $g(\theta)$. This is an unbiased estimator if
+	\begin{equation}
+	\nonumber
+		\E{\ghX} = g(\theta),
+	\end{equation}
+	where the \emph{bias} of $\gh$ is defined as
+	\begin{equation}
+	\nonumber
+		b_\gh(\theta) = \E{\ghX} - g(\theta).
+	\end{equation}
+	Furthermore, we say that the estimator is \textbf{asymptotically unbiased} if:
+	\[\lim_n\E{\gh (X_1,...,X_n)} = g(\theta),\]
+	meaning that, the estimator only becomes unbiased when an \emph{infinite amount of data} are available.
+\end{definition}
+
+\begin{remark}
+The relevance of unbiased estimators in statistical inference stems from the fact that they recover the true parameter on average. However, one should not focus on unbiasedness exclusively: performing well on average does not guarantee anything about the estimator's variability (variance), or about how large a sample is needed for the estimator to be reliable.
+\end{remark}
+
+The following examples illustrate the role of unbiased estimators in two parametric families. 
+
+\begin{example}[Unbiased estimator for the Gaussian mean]
+	\label{ex:estimador_in_media}
+	The estimator of $g(\theta) =  \mu$ described in Example \ref{ex:estimador_media} is unbiased. Indeed: 
+	\begin{equation}
+	\nonumber
+		\E{\ghX} = \E{\frac{1}{n}\sum_{i=1}^nX_i}	= \frac{1}{n}\sum_{i=1}^n\E{X_i}		= \frac{1}{n}\sum_{i=1}^n\mu = \mu.
+	\end{equation}
+\end{example}
+
+The following example shows a \textbf{biased} estimator of the variance and how an \textbf{unbiased} estimator can be constructed based on it. 
+
+\begin{example}[Pythagoras]
+Let us consider a parametric family $\familiaparametrica$, and denote its mean and variance by $\mu$ an $\sigma^2$ respectively. Using observations $x_1,x_2,\ldots,x_n$, we can calculate the variance of the estimator of the mean, given by $\xb = \frac{1}{n}\sum_{i=1}^n x_i$ according to 
+\begin{equation}
+	\label{eq:varianza_media_muestral}
+ 	\Vt{\xb} = \Vt{\frac{1}{n}	\sum_{i=1}^n x_i}  \underbrace{=}_{\text{i.i.d.}}  \frac{1}{n^2}	\sum_{i=1}^n\Vt{ x_i} =\frac{\sigma^2}{n}.
+ \end{equation} 
+ This means that the estimator of the mean using $n$ observations has a variance $\sigma^2/n$.
+
+ Let us now consider the following estimator for the variance: 
+\begin{equation}
+	\label{eq:est_varianza_sesgado}
+	S_2 = \frac{1}{n}\sum_{i=1}^n (x_i-\xb)^2,
+\end{equation}
+and observe that the expected value of such estimator is
+\begin{align}
+	\label{eq:sesgo_varianza}
+	\Et{S_2 } &= \Et{\frac{1}{n}\sum_{i=1}^n (x_i-\mu+\mu-\xb)^2}\nonumber\\
+				&= \Et{ \frac{1}{n}\sum_{i=1}^n(x_i-\mu)^2 + 2\frac{1}{n}\sum_{i=1}^n(x_i-\mu)(\mu-\xb) + \frac{1}{n}\sum_{i=1}^n(\mu-\xb)^2}\nonumber\\
+				&= \Et{ \frac{1}{n}\sum_{i=1}^n(x_i-\mu)^2 - 2(\mu-\xb)^2 + (\mu-\xb)^2}\nonumber\\
+				&= \Et{ \frac{1}{n}\sum_{i=1}^n(x_i-\mu)^2 - (\mu-\xb)^2}\nonumber\\
+				&= \Vt{x_i} - \Vt{\xb}\quad\text{see eq.~\eqref{eq:varianza_media_muestral}}\nonumber\\
+				&= 	\sigma^2 - \sigma^2/n = \left(\frac{n-1}{n}\right)\sigma^2.
+\end{align}
+Therefore, the bias of the estimator in eq.~\eqref{eq:est_varianza_sesgado} is asymptotically unbiased. Additionally, we can remove this bias by multiplying the estimator $S_2$ in eq.~\eqref{eq:est_varianza_sesgado} by $n/(n-1)$, giving
+\begin{equation}
+	\label{eq:est_varianza_insesgado}
+	S'_2 = \frac{n}{n-1}S_2 =  \frac{1}{n-1}\sum_{i=1}^n (x_i-\xb)^2,
+\end{equation}
+for which it holds
+\begin{equation}
+	\Et{S'_2 } =  \left(\frac{n}{n-1}\right)\Et{S_2} \underbrace{=}_{\text{eq.}\eqref{eq:sesgo_varianza}} \left(\frac{n}{n-1}\right) \left(\frac{n+-}{n}\right)\sigma^2 = \sigma^2.
+\end{equation}
+As a consequence, the estimator $S'_2$ in eq.~\eqref{eq:est_varianza_insesgado} is unbiased.
+\end{example}
+
+
+\subsubsection{Loss functions}
+
+We now consider loss functions to determine the cost of estimating a parameter by a given estimator. From now on, we will consider estimators of $g(\theta) = \theta$ for simplicity of notation.
+
+\begin{definition}[Loss function]
+Let $\theta\in\Omega$ be a parameter and $a\in\Omega$ an estimator. The cost of estimating $\theta$ by $a$ is given by:
+\begin{align}
+    L: (\Omega \times \Omega) &\rightarrow \R\\
+    (\theta \times a) &\mapsto L(\theta,a).
+\end{align}
+
+\end{definition}
+
+\begin{example}[Quadratic loss function]
+	\label{ex:costo_cuadrático}
+An extensively-used loss for comparing estimators is the {quadratic loss}, given by   
+$$
+L_2(\theta,a) = ||\theta-a||^{2}.
+$$
+\end{example}
+
+\begin{remark}
+Why do we use the exponent 2 used and not other such as 4 or 1?
+\end{remark}
+
+
+\begin{example}[$0-1$ loss]
+	\label{ex:costo_0-1}
+When estimating parameters in a space with no order relation, the $0-1$ loss is usually considered. This is given by
+$$
+L_{01}(\theta,a) = \ind_{\theta\neq a}.
+$$
+\end{example}
+
+The loss is computed as a function of the estimator, which is in turn computed as a function of $X$, this means that the loss is itself random. We are thus interested in the expected loss, which is known as \textit{risk}. 
+
+\begin{definition}[Risk]
+Given a parameter $\theta \in \Omega$, an estimator $a \in \Omega$, and a loss function $L(\theta,a)$, the \emph{risk} of estimating $\theta$ by $a$ is defined as the expected loss:
+\begin{align}
+    R: (\Omega \times \Omega) &\rightarrow \R,\\
+    (\theta \times a) &\mapsto \mathbb{E}[\,L(\theta,a)\,].
+\end{align}
+\end{definition}
+
+In particular, the risk associated to the quadratic loss in ex.~\ref{ex:costo_cuadrático} for an estimator $\phi$ of the parameter $\theta$, if given by: 
+\begin{alignat}{3}
+ 	R(\theta, \phi)  &= \E{(\theta - \phi)^2}\nonumber\\
+ 						& = \E{\left(\theta - \bar{\phi}+ \bar{\phi} -\phi\right)^2}; \quad \text{denoting }\bar{\phi} = \E{ \phi}\nonumber\\
+ 						& = \E{(\theta - \bar{\phi})^2+2(\theta - \bar{\phi})\cancel{(\bar{\phi} -\phi)} +  (\bar{\phi} -\phi)^2}\nonumber\\
+ 						& = \underbrace{(\theta - \bar{\phi})^2}_{=b_{\phi}^2\ (\text{bias}^2)} +  \underbrace{\E{(\bar{\phi} -\phi)^2}}_{=V_{\phi}\ \text{(variance)}}.\label{eq:riesgo_cuad}
+ \end{alignat} 
+ From this result, we can see a justification for the use of the quadratic loss: its risk splits automatically in two terms expressing the accuracy (how unabiased it is) and precision (how disperse) of the estimator.
+
+
+\subsection{Maximum likelihood estimator (MLE)} % (fold)
+\label{sec:estimador_de_máxima_verosimilitud}
+
+In general, loss functions are not a pathway to construct estimators. This is because optimising a defined loss is unfeasible, as it depends explicitly on the true parameter. Luckily, we can construct an estimator based directly on: i) the pdf of $X\in\cX$, where the parameters $\theta$ appears explicitly, and ii) an observation dataset. To this end, the following definition is crucial.
+
+\begin{definition}[Likelihood function]
+Let $X$ be a random variable with probability density (or mass) function 
+$p_\theta(x)$ indexed by a parameter $\theta \in \Omega$. For an observed value 
+$x$, the \emph{likelihood function} is defined as the mapping
+\begin{align}
+    \mathcal{L}: \Omega &\rightarrow \R_{\ge 0},\\
+    \theta &\mapsto p_\theta(x),
+\end{align}
+which measures how plausible each parameter value $\theta$ is given the observation $x$.
+\end{definition}
+
+\begin{remark}
+The likelihood function is not a probability density function.
+\end{remark}
+
+\begin{remark}[Log-likelihood]
+It is often convenient to work with the \emph{log-likelihood},
+\[
+    \ell(\theta) = \log \mathcal{L}(\theta),
+\]
+since the logarithm is a strictly increasing function and therefore preserves maximisers of the likelihood. Moreover, $\ell(\theta)$ is typically easier to manipulate and optimise, both analytically and computationally.
+\end{remark}
+
+\begin{remark}
+In general (yet not always) we will assume i.i.d.~observations $\cD = {X_1,\ldots,X_n}$, $X_i\sim p(x|\theta)$. In such case, the likelihood factorises as $L_\cD(\theta) = \prod_{i=1}^n L_{X_i}(\theta)$, and the log-likelihood takes the form
+\begin{equation}
+l_\cD(\theta) = \sum_{i=1}^nl_{X_i}(\theta).
+\end{equation}
+\end{remark}
+
+
+\begin{example}[Likelihood of the mean of a Gaussian]
+\label{ex:ell_mean_Gaussian}
+Let us consider the observations $\cD = \{x_1,...,x_n\}$, where $x_i$ is the realisation of a RV $X_i\sim \mathcal{N}(\mu,\sigma^2)$ with known $\sigma^2$. The likelihood function of $\mu$ is given by:
+\begin{align}
+\mathcal{L}(\mu)=p(\cD|\mu)&=\prod_{i=1}^{n} \frac{1}{\sqrt{2 \pi \sigma^{2}}} 
+\exp\left(\frac{-1}{2\sigma^{2}}(x_i-\mu)^{2}\right)\nonumber\\
+&= \left(\frac{1}{\sqrt{2 \pi \sigma^{2}}}\right)^{n} \exp\left(\frac{-1}{2 \sigma^{2}} \sum_{i=1}^{n} (x_i - \mu )^{2}\right).
+\end{align}
+
+Thus, the log-likelihood is given by:
+\begin{equation}
+    l(\mu)= \log \mathcal{L}(\mu) = -\frac{n}{2} \log(2 \pi \sigma^{2}) + \frac{-1}{2\sigma^{2}} \sum_{i=1}^{n} (x_i - \mu )^{2}.
+\end{equation}
+
+\end{example}
+
+\begin{definition}[Maximum likelihood estimator, MLE]
+    Let $x$ be an observation (or realisation) of the random variable $X$, and let 
+    $\mathcal{L}(\theta \mid x)$ be the corresponding likelihood function. The 
+    \emph{maximum likelihood estimator} is defined by
+    \begin{equation}
+        \hat{\theta}_{\mathrm{MLE}} = \underset{\theta}{\arg\max}\, \mathcal{L}(\theta \mid x).
+    \end{equation}
+\end{definition}
+
+\begin{exercise}
+	Find the MLE for $\theta = (\mu,\Sigma)$ for the RV $X\sim\cN(\mu,\Sigma)$ in ex.~\ref{ex:ell_mean_Gaussian}.
+\end{exercise}
+
+
+\begin{remark}
+The MLE can be defined either in terms of the likelihood itself or any non-decreasing function of it, and it may also fail to exist or to be unique. Furthermore, we will often even ignore constants in the (log) likelihood, as these do not affect the maximiser of $L(\theta)$.
+\end{remark}
+
+
+
+
+\begin{example}[MLE: Bernoulli]
+	\label{ex:bernoulli_MV}
+	Let $X_1,\ldots X_n\sim\ber{\theta}$, the likelihood of $\theta$ is given by 
+	\begin{equation}
+		L(\theta) = \prod_{i=1}^n\theta^x_i(1-\theta)^{1-x_i},
+	\end{equation}
+	and its log-likelihood by $l(\theta) = (\sum_{i=1}^nx_i)\log \theta + (n-\sum_{i=1}^nx_i)\log(1-\theta)$. The MLE can be found by $\frac{\partial l(\theta)}{\partial \theta} = 0$:
+	\begin{align*}
+	\frac{\partial l(\theta)}{\partial \theta} =0 
+	&\Rightarrow  (\sum_{i=1}^nx_i) \theta^{-1} = (n-\sum_{i=1}^nx_i)(1-\theta)^{-1}\\
+	&\Rightarrow  \sum_{i=1}^nx_i (1-\theta) = (n-\sum_{i=1}^nx_i) \theta\\
+	&\Rightarrow  \theta = \sum_{i=1}^nx_i/n.
+	\end{align*}
+	Both $l(\theta)$ and MLE for the Bernoulli model are shown in Figure \ref{fig:mle}.
+\end{example}
+
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/stats_bernoulli_mle.pdf}
+    \caption{Likelihood plot for the Bernoulli model with maximum (MLE estimator)}
+    \label{fig:mle} 
+\end{figure}
+
+
+
+\begin{example}
+	Let $X\sim\unif{\theta}$, that is, $p(x) = \theta^{-1} \ind_{0\leq x \leq \theta}$. To calculate the likelihood function, observe that 
+	\begin{equation}
+		L(\theta) = \prod_{i=1}^n p_\theta(x_i),
+	\end{equation}
+	and note that $p_\theta(x_i) = 0$ if $x_i>\theta$. Therefore, $L(\theta)>0$ only if $\theta$ is greater than each observation, in particular, if $\theta\geq\max_{i=1,\ldots,n}\{x_i\}$. Additionally, if $\theta\geq\max_{i=1,\ldots,n}\{x_i\}$, then notice that $p_\theta(x_i) = 1/\theta$. As a consequence, the likelihood is given by 
+		\begin{equation}
+		L(\theta) = \theta^{-n}, \quad \theta\geq\max_{i=1,\ldots,n}\{x_i\}
+	\end{equation}
+	and the MLE is $\thetaMV = \max_{i=1,\ldots,n}\{x_i\}$.
+	% \todo{Plot $l(\theta)$ and MLE}
+
+\end{example}
+
+The maximum likelihood estimator (MLE) satisfies several important theoretical properties:
+
+\begin{itemize}
+    \item \textbf{Consistency:} Under the assumption that the statistical model is \emph{identifiable}—i.e., different parameter values correspond to different probability distributions—the MLE converges to the true parameter as the number of observations grows. Intuitively, maximising the likelihood asymptotically minimises the Kullback--Leibler divergence between the true distribution and the distribution induced by a candidate parameter.
+    
+    \item \textbf{Equivariance:} If $\hat{\theta}_{\mathrm{MLE}}$ is the MLE of $\theta$, then for any transformation $g$, the MLE of $g(\theta)$ is $g(\hat{\theta}_{\mathrm{MLE}})$. This property allows us to compute MLEs under reparametrisations directly.
+    
+    \item \textbf{Asymptotic normality:} For large sample sizes, the MLE is approximately normally distributed around the true parameter with covariance matrix given by the inverse Fisher information. Formally, 
+    \[
+        \sqrt{n}(\hat{\theta}_{\mathrm{MLE}} - \theta) \ \xrightarrow{d} \ \mathcal{N}(0, I(\theta)^{-1}),
+    \]
+    where $I(\theta)$ is the Fisher information matrix.
+    
+    \item \textbf{Asymptotic efficiency:} As a consequence of asymptotic normality, the MLE achieves the Cramér--Rao lower bound for the variance in the limit of large $n$, making it asymptotically optimal among unbiased estimators.
+\end{itemize}
+
+In practice, these properties justify the widespread use of the MLE: it not only converges to the true parameter under mild assumptions, but also allows for straightforward reparametrisations and provides an estimator with minimal asymptotic variance.
+
+
+
+\subsection{MLE in practice: three examples}
+\label{sub:MV_tres_ejemplos}
+
+\subsubsection{Gaussian linear regression} 
+\label{sub:reg_lin}
+
+Let us consider the task of modelling the number of passengers travelling each month in an airline. Experts have established that this variable as a quadratic growing trend and an oscillatory component of annual frequency. These phenomena can be explained by population growth, diminishing costs of operation, and the yearly seasonality of economic activity. 
+
+Assuming that the number of passenger is a RV, we can model its (conditional) distribution wrt time $t$ by a normal distribution parametrised by 
+\begin{equation}
+	X \sim \cN\left(\theta_0 + \theta_1 t^2 + \theta_2\cos(2\pi t/12), \theta_3^2\right),
+\end{equation}
+where $\theta_0,\theta_1,\theta_2$ control the mean and $\theta_3$ the variance. 
+
+Consequently, if the observations are given by $\{(t_i,x_i)\}_{i=1}^n$, the log-likelihood of $\theta$ is
+\begin{align}
+	\label{eq:logV_ejemplo_reg}
+	l(\theta) 	&=\loga{\prod_{i=1}^n \frac{1}{\sqrt{2\pi\theta_3^2}}\expo{-\frac{(x_i-\theta_0 - \theta_1 t^2 - \theta_2\cos(2\pi t/12))^2}{2\theta_3^2}}}\nonumber \\
+	&=\frac{n}{2}\loga{2\pi\theta_3^2}  - \frac{1}{2\theta_3^2}\sum_{i=1}^n (x_i - \theta_0 - \theta_1 t_i^2 - \theta_2\cos(2\pi t_i/12))^2
+\end{align}
+where we can see that $\thetaMV$ can be calculated explicitely and it is a function of  $\{(t_i,x_i)\}_{i=1}^n$, since eq.~\eqref{eq:logV_ejemplo_reg} is quadratic in $[\theta_0,\theta_1,	\theta_2]$.
+
+\todo{plot and show the ML soln}  % get data for this
+
+
+% subsection estimador_de_mv_en_la_práctica_tres_ejemplos (end)
+
+\subsubsection{Classification} 
+\label{sub:clasif}
+
+$\hat{\theta}_{\mathrm{MLE}}$ was explicitly calculated above because the Gaussian model with a linearly parametrised mean leads to a quadratic log-likelihood, where the maximum is unique due to convexity and can be written in closed form. However, in many situations, a linear Gaussian model is not appropriate.
+
+For instance, in credit scoring, a bank officer must decide whether or not to grant the requested credit to a prospective client based on a set of descriptive \emph{features}. To make this decision, the officer reviews the bank’s database and identifies clients who, in the past, either repaid or defaulted on their loans, in order to determine the profile of a \emph{payer} and a \emph{non-payer}. A new client can then be \emph{classified} as a payer or non-payer based on their similarity to these groups.
+
+Formally, let us denote the client’s features by $t \in \R^N$, and assume that the client repays the loan with probability $\sigma(t)$ and defaults with probability $1 - \sigma(t)$, where the function $\sigma(t)$ is to be defined. This is equivalent to constructing the random variable $X$.
+\begin{equation}
+ 	X|t \sim \ber{(\sigma(t))},
+ \end{equation} 
+ where $X=1$ represent a paying client, and $X=0$ the opposite. A usual choice for the function $\sigma(\cdot)$ is the logistic function applied to a linear transformation of$t$, that is, 
+ \begin{equation}
+ 	\Pr{(X=1|t)} = \frac{1}{1+e^{-(\theta_0 + \theta_1 t)	}}.
+ \end{equation}
+Observe that this is a linear classifier, where $\theta = [\theta_0, \theta_1]$ defines a hyperplane in $\R^N$ where clients such that $t\in\{t | 0\leq \theta_0 + \theta_1 t\}$ pay with probability greater or equal to 1/2, and the rest with probability less or equal to 1/2. This is known as \textbf{logistic regression}. 
+
+Therefore, using the bank data $\{(x_i,t_i)\}_{i=1}^n$, what is the MLE for $\theta = [\theta_0, \theta_1]$? To answer this, notice that log-likelihood $\ell$ can be written as 
+\begin{align*}
+	\ell(\theta) &= \log \prod_{i=1}^n p(x_i|t) \\
+			  &= \sum_{i=1}^n x_i \log \sigma(t) + \left(n-\sum_{i=1}^n x_i\right)\log(1-\sigma(t))\\
+			  &= \sum_{i=1}^n x_i \log \left(\frac{1}{1+e^{-(\theta_0 + \theta_1 t)	}}\right) + \left(n-\sum_{i=1}^n x_i\right)\log\left(1-\frac{1}{1+e^{-(\theta_0 + \theta_1 t)	}}\right).
+\end{align*}
+This expression does not have a global minima and, even though its gradient can be computed, we cannot solve $\partial l(\theta)/\partial \theta =0$ analytically. Finding the MLE thus requires gradient descent.  
+
+\subsubsection{Latent variables: Expectation-Maximisation} 
+\label{sub:EM}
+
+In certain scenarios, the process of interest can be generated by a mixture of sources. For example, consider the distribution of heights in a population: we can naturally model this as a mixture of marginal distributions for male and female heights separately, i.e.,
+\begin{align*} 
+\mathcal{L}(\theta) &= \prod_{i=1}^n  p\cN(X|\mu_H,\Sigma_H) + (1-p)\cN(X|\mu_M,\Sigma_M) \\ 
+&= \prod_{i=1}^n \left( p\frac{1}{\sqrt{2\pi\Sigma_H^{-1}}}\expo{\frac{-(x_i-\mu_H)^2}{2\Sigma^2_H}} + (1-p)\frac{1}{\sqrt{2\pi\Sigma_M^{-1}}}\expo{\frac{-(x_i-\mu_M)^2}{2\Sigma^2_M}}\right),
+\end{align*}
+where $p$ is referred to as the \emph{class-conditional probability}.
+
+Optimising this expression with respect to all five components of $\theta$ is difficult, particularly because of the sum inside the product, which prevents simplification via the logarithm.
+
+A key difference of this model compared to previous ones is the implicit introduction of a \emph{latent variable}, that indicates which Gaussian generated each observation. If we knew this latent variable, the problem would become much simpler. Indeed, assume for a moment that we have access to observations $\{z_i\}_{i=1}^n$ of the random variables $\{Z_i\}_{i=1}^n$, where each $Z_i$ indicates which model generated $x_i$ (e.g., $Z_i = 0$ for male, $Z_i = 1$ for female).
+
+In this case, let us consider the \textbf{complete data} $\{(x_i, z_i)\}_{i=1}^n$ and write the complete-data log-likelihood as
+\begin{align*} 
+\ell(\theta|z_i,x_i) &= \log\prod_{i=1}^n \cN(X|\mu_H,\Sigma_H)^{z_i} \cN(X|\mu_M,\Sigma_M)^{(1-z_i)}\\ 
+&\hspace{-3em}= \sum_{i=1}^n \left( z_i\log\frac{1}{\sqrt{2\pi\Sigma_H^{-1}}}\expo{\frac{-(x_i-\mu_H)^2}{2\Sigma^2_H}} + (1-z_i)\log\frac{1}{\sqrt{2\pi\Sigma_M^{-1}}}\expo{\frac{-(x_i-\mu_M)^2}{2\Sigma^2_M}}\right). \end{align*}
+This objective function is much easier to optimise. However, the observations on which this likelihood builds are not truly \emph{observed}, because the RV $Z$ is latent. To address this, we can take the conditional expectation of the above expression with respect to $Z$, and then maximise this expression (now independent of $Z$) with respect to $\theta$, and iterate. Specifically, since the expression is linear in $z_i$, it suffices to take its expectation and plug it in the above expression.
+\begin{align*} 
+\Et{Z_i|\theta_t,x_i} &= 1\cdot\Prob{Z_i=1|\theta_t,x_i} + 0\cdot\Prob{Z_i=0|\theta_t,x_i}\\ 
+&= \frac{\Prob{x_i|\theta_t,z_i=1} p(z_i=1)}{p(x_i|\theta)}\\ 
+&= \frac{\Prob{x_i|\theta_t,z_i=1} p(z_i=1)}{p(x_i|z=1,\theta)p(z=1)+p(x_i|z=0 ,\theta)p(z=0)} \end{align*}
+
+
+\subsection{Bayesian inference}
+
+We will study a complementary perspective to finding the parameter $\theta$ which incorporates a model for the parameter's uncertainty. In the Bayesian paradigm, we will assume that the parameter is a RV $\Theta$ that takes a value $\theta$. This allows us to incorporate \emph{a priori} information into the estimation process. A conceptual difference between the two inferential approaches is that the frequentist approach aims to avoid subjectivity, while the Bayesian one builds on the expert knowledge of the scientist to propose and assess possible hypotheses.
+
+
+\begin{definition}[A priori distribution]
+The information, inductive biases, and any other known property of $\Theta$ can be encoded into the parameter's probability distribution, referred to as \emph{a priori distribution}, or simply \emph{prior}. We assume this distribution  has a density denoted $p(\theta)$.
+\end{definition}
+
+With the above definition, we can see that the joint density of the RVs $X,\Theta$ can be expressed as
+\begin{equation}
+    p(x,\theta) = p(x|\theta)p(\theta),
+    \label{eq:joint_bayes}
+\end{equation}
+where we have written $p(x|\theta)$ instead of $p_\theta(x)$ to emphasise that we now consider the parameter to be a RV. 
+
+\begin{definition}[Marginal distribution]
+The distribution of $X$ can obtained through the disintegration of $\Theta$ from $(X,\Theta)$, that is 
+\begin{equation}
+    p(x) = \int_\Omega p(x|\theta)p(\theta)\d\theta.
+\end{equation}
+We refer to this distribution as the marginal distribution of $X$.
+\end{definition}
+
+
+We can now define the central object of the Bayesian inference paradigm. 
+
+\begin{definition}[Posterior distribution]
+\label{dist_posterior}
+Given a set of observations $\cD$, the \emph{posterior} distribution of the parameter, which considers the information provided by the data $\cD$ and the prior knowledge, is given through Bayes theorem by
+\begin{align}
+    p(\theta|\cD) = \frac{p(\cD)|\theta)p(\theta)}{p(\cD)}  \propto p(\mathcal{D}|\theta) p(\theta) \label{eq:posterior_def},
+\end{align}
+where: 
+\begin{itemize}
+    \item $p(\theta)$ is the parameter's prior law.
+    \item $p(\theta|\mathcal{D})$ is the parameter's posterior law.
+    \item $p(\mathcal{D}|\theta)$ is the likelihood.
+    \item $p(\mathcal{D}) = \int_\Omega p(\mathcal{D}|\theta)p(\theta)\d \theta $ is the data marginal density.
+\end{itemize}
+\end{definition}
+
+
+The \emph{transition} from prior to posterior can be interpreted as the process of incorporating the evidence provided by the data (through the likelihood function) in order to reduce uncertainty about the value of the parameter $\Theta$. From  eq.~\eqref{eq:posterior_def} we can see that this process, sometimes referred to as \emph{Bayesian update}, amounts to multiplying by the likelihood and then normalising, ensuring that $p(\theta|\mathcal{D})$ is indeed a probability density.
+
+\begin{remark}
+The symbol $\propto$ in eq.~\eqref{eq:posterior_def} is used to indicate that the left-hand side is equal to the right-hand side up to a proportionality constant that depends on the $\mathcal{D}$ and not on $\theta$. Therefore, the posterior can be calculated up to a \emph{proportional version}, which can then be refined via normalisaton.
+\end{remark}
+
+\begin{example}[Posterior distribution for Bernoulli]
+\label{ej_post_bernoulli_1}
+Let $\theta$ be the probability to obtain heads when throwing a coin, and let $X_1,\ldots, X_n$ be $n$ i.i.d.~realisations of this experiment. Without prior knowledge of $\theta$, it is reasonable to assume a uniform prior $\theta \sim \unif(0,1)$. Recall that this priori encodes our beliefs for the parameter before the experiment. Modelling $X_1,\ldots,X_n \sim \ber(\theta)$, we have: 
+$$
+p(X_1,\ldots,X_n|\theta)=\prod_{i=1}^{n} \theta^{X_i} (1-\theta)^{1-X_i} = 
+\theta^{\sum_{i=1}^{n} X_i} (1-\theta)^{n-\sum_{i=1}^{n}X_i}.
+$$Also, $p(X_1,\ldots,X_n)$ is given by 
+$$
+p(X_1,\ldots,X_n)=\int_{0}^{1} \theta^{\sum_{i=1}^{n} X_i} (1-\theta)^{n-\sum_{i=1}^{n}X_i} d\theta = B\left(\sum_{i=1}^{n} X_i +1 , n- \sum_{i=1}^{n} X_i +1 \right),
+$$
+where $B(x,y)$ is the beta function:
+$$
+B(x,y)=\dfrac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}.
+$$
+Let $s= \sum_{i=1}^{n}X_i$. Then, the posterior is
+
+$$
+p(\theta|X_1,..X_n)= \dfrac{p(X_1,\ldots,X_n|\theta)}{p(X_1,\ldots,X_n)} = \dfrac{1}{B(s+1,n-s+1)} \theta^{s} (1-\theta)^{n-s}.
+$$
+
+As a generalisation of the above, one can consider the Beta distribution itself as a  prior for the Bernoulli model. The density of a $Beta(\alpha,\beta)$ distribution with parameters $\alpha$ and $\beta$ is given by $Beta(\theta) = \theta^{\alpha-1} (1-\theta)^{\beta-1}$. It can be proven that when using a Beta prior, the posterior for the Bernoulli model will be given by $Beta(\alpha+s,\beta+n-s)$. We provide a visualisation of this when using $Beta(2,2)$ as a prior in Figure \ref{fig:beta_post}. Notice that when setting $\alpha=\beta=1$ we retrieve the uniform prior and the derivation above.
+
+\end{example} 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/stats_beta_posterior.pdf}
+    \caption{Example of the likelihood, Beta prior and posterior for the Bernoulli model.}
+    \label{fig:beta_post} 
+\end{figure}
+
+In some cases, the observations  $x_1,\ldots,x_n$ are available sequentially, or \emph{on line}. Therefore, assuming a prior $p(\theta)$, it is possible to perform on online, or continual, Bayesian update as new data are observed. After seeing $x_1$, the posterior $p(\theta|x_1)$ can be computed as: 
+$$
+p(\theta|x_1) \propto p(x_1|\theta) p(\theta).
+$$
+Then, after observing $x_2$, and given that $X_1$ and $X_2$ are conditionally independent given $\theta$, we have: 
+$$
+p(\theta | x_1,x_2) \propto 
+p(x_2|\theta) p(\theta|x_1) \propto p(x_1 |\theta) p(x_2|\theta) p(\theta). 
+$$
+In the general case we have
+$$
+p(\theta | x_1,..x_n) \propto p(x_n|\theta) p(\theta|x_1,..x_{n-1}) \propto p(\theta) \prod_{i=1}^n p(\theta | x_i).
+$$
+
+\begin{remark}
+In the online Bayesian update, the $n$-stage posterior is the $n+1$-stage prior.
+\end{remark}
+
+
+\subsection{Conjugate priors}
+
+Bayesian updating may yield a posterior that is known only up to a proportionality constant (when the marginal distribution $p(x)$ cannot be computed), or a posterior that does not belong to any familiar distributional family. A key tool that guarantees the computability of the posterior distribution, including its normalising constant, and ensures that it takes a known form is the use of \textbf{conjugate priors}.
+
+\begin{definition}
+Consider a model with likelihood $p(x|\theta)$ and a prior $p(\theta)$. We say that $p(\theta)$ is conjugate to the likelihood $p(x|\theta)$ if the posterior
+\begin{equation}
+	p(\theta|x) = \frac{p(x|\theta)p(\theta)}{p(x)}
+\end{equation}
+is in the \textit{same family} as the prior $p(\theta)$. This means that both prior and posterior have the same functional form, e.g., $f_\lambda(\theta)$, but with different parameter $\lambda$.
+\end{definition}
+
+
+\begin{example}[continuation of Ex.~\ref{ej_post_bernoulli_1}]
+\label{ej_post_bernoulli_2}
+Verify if the priori in Ex.~\ref{ej_post_bernoulli_1} is indeed a conjugate prior. 
+\end{example}
+
+\begin{example}[Multinomial distribution]
+Consider a ($k$-dimensional) multinomial random variable \(X \sim \mathrm{Mult}(n,\theta)\). The \(i\)-th component of this variable models the number of times that
+event \(i\) occurs among \(k\) possible events over \(n\) realisations. The parameter of this distribution is known as the \emph{probability vector}, denoted \(\theta\), which belongs to the simplex
+\[
+\{\theta \in [0,1]^k : \theta_1 + \cdots + \theta_k = 1\}.
+\]
+For example, if we roll a fair die 100 times, the vector containing the
+count of occurrences of each face can be modelled as
+\[
+X_{\text{die}} \sim \mathrm{Mult}\!\left(100,
+  \left[\tfrac{1}{6}, \ldots, \tfrac{1}{6}\right]\right).
+\]
+
+Let \(X = [x_1,\ldots,x_k]\). Any multinomial sample satisfies
+\[
+x_i \in \{0,1,\ldots,n\}, \qquad \sum_{i=1}^k x_i = n.
+\]
+
+The multinomial distribution is given by
+\[
+\mathrm{Mult}(X; n, \theta)
+  = \frac{n!}{x_1! \cdots x_k!}\,
+    \theta_1^{x_1} \cdots \theta_k^{x_k},
+\]
+and it generalises the following distributions:
+\begin{itemize}
+  \item the \emph{Bernoulli} distribution when \(k = 2\) and \(n = 1\);
+  \item the \emph{categorical} (or \emph{multinoulli}) distribution when \(n = 1\);
+  \item the \emph{binomial} distribution when \(k = 2\).
+\end{itemize}
+
+\end{example}
+Observe that the parameter $\theta$ for the multinomial (and the other related three distributions) is a discrete probability function. This means that constructing the prior $p(\theta)$ implies the definition of a probability distribution over probability distributions.  
+
+
+\begin{definition}[Dirichlet distribution]
+Let us consider the distribution 
+\begin{equation}
+	\theta \sim \dir{\theta|\alpha} = \frac{1}{B(\alpha)} \prod_{i=1}^k \theta_i^{\alpha_i-1},
+\end{equation}
+where $\alpha = (\alpha_1,\ldots,\alpha_k)$ is a concentration parameter and the normalising constant is given by  $B(\alpha)=\prod_{i=1}^k\Gamma(\alpha_i)/\Gamma(\sum_{i=1}^k\alpha_i)$. The support of this distribution is the simplex.
+\end{definition}
+
+For $k=3$, Dirichlet's distribution can be plotted in 2 dimensions. Fig.~\ref{fig:dist_Dirichlet} shows three plots for different values of the concentration parameter.
+
+\begin{figure}[H]
+\includegraphics[width=0.3\textwidth]{img/stats_dirichlet111.png}
+\includegraphics[width=0.3\textwidth]{img/stats_dirichlet101010.png}
+\includegraphics[width=0.3\textwidth]{img/stats_dirichlet1022.png}
+\caption{Dirichlet distribution for $k=3$ with concentration parameters  $\alpha$ (left to right) $[1,1,1]$, $[10,10,10]$ y $[10,2,2]$. }.
+\label{fig:dist_Dirichlet}
+\centering
+\end{figure}
+
+We will see now that the Dirichlet distribution is conjugate to the Multinomial, and, as a consequence, to Bernoulli, Categorical and Binomial. In fact, if $\theta \sim \dir{\theta;\alpha}$ y $X\sim\mul{X;n,\theta}$, then
+\begin{align}
+	p(\theta|x) &= \frac{\mul{x;n,\theta}\dir{\theta;\alpha}}{p(x)}\nonumber\\
+				&=  \frac{n!}{ x_1!\cdots x_k!p(x) B(\alpha)} \prod_{i=1}^k \theta_i^{x_i + \alpha_i-1}\nonumber\\
+				&=  \frac{1}{B(\alpha')} \prod_{i=1}^k \theta_i^{\alpha'_i-1}
+				\label{eq:dirichlet_post}
+\end{align}
+where $\alpha' = (\alpha'_1,\ldots,\alpha'_k) = (\alpha'_1 + x_1,\ldots,\alpha'_k+ x_k)$ is the updated concentration parameter.
+
+\begin{remark}
+	How difficult was it to compute the normalising constant in the above example?
+\end{remark}
+
+\begin{example}
+	Let us consider $\alpha = [1,2,3,4,5]$ and generate a sample from $\theta\sim\dir{\theta|\alpha}$. The following snippet generates, plots and prints this sample. 
+	\begin{lstlisting}[language=Python]
+	import numpy as np
+	alpha = np.array([1,2,3,4,5]) 
+	theta = np.random.dirichlet(alpha)
+	plt.bar(np.arange(5)+1, theta);
+	print(f'theta = {theta}')
+\end{lstlisting}
+The obtained parameters are $ \theta = [0.034, 0.171, 0.286, 0.185, 0.324]$.
+
+ Now, using a Dirichlet prior over $\theta$ con $\alpha_p = [1,1,1,1,1]$, let us  calculate the posterior according to eq.~\eqref{eq:dirichlet_post}. Fig.~\ref{fig:post_Dirichlet} shows 50 samples from the posterior for different amounts of observations between 0 and $ 10^5$. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.3\textwidth]{img/stats_post_dirichlet_0.pdf}
+\includegraphics[width=0.3\textwidth]{img/stats_post_dirichlet_10.pdf}
+\includegraphics[width=0.3\textwidth]{img/stats_post_dirichlet_100.pdf}\\
+\includegraphics[width=0.3\textwidth]{img/stats_post_dirichlet_1000.pdf}
+\includegraphics[width=0.3\textwidth]{img/stats_post_dirichlet_10000.pdf}
+\includegraphics[width=0.3\textwidth]{img/stats_post_dirichlet_100000.pdf}
+\caption{Posterior concentration around the real parameter for a model $X\sim\mul{\theta}$ and the prior Dirichlet distribution $\theta\sim\dir{\alpha}$. Observations considered ranged between 0 and $10^5$, and each plot whows the the true parameter in (broken red line), the posterior mean (broken blue line) and 50 samples from thr posterior (light blue). Observe how the effect of the prior (broken blue line in the first plot) vanishes as the number of observations grows.}
+\label{fig:post_Dirichlet}
+\end{figure}
+\end{example}
+
+
+\begin{example} \textbf{Gaussian model (known $\sigma^2$).} Let us consider observations $x_1,\ldots,x_n$ from a Gaussian pdf $\cN(\mu,\sigma^2)$, and consider the prior on the mean $p(\mu) = \cN(\mu_0,\sigma_0^2)$, in which case the posterior is given by
+ \begin{align}
+ 	p(\mu|\mathcal{D}) &\propto \prod_{i=1}^n \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{1}{2\sigma^2}(x_i-\mu)^2\right) \frac{1}{\sqrt{2\pi\sigma_0^2}}\exp\left(-\frac{1}{2\sigma_0^2}(\mu-\mu_0)^2\right)\label{eq:post_normal_mu_1}\\
+ 	&\propto \exp\left(-\frac{1}{2\sigma^2}\sum_{i=1}^n(x_i-\mu)^2-\frac{1}{2\sigma_0^2}(\mu-\mu_0)^2\right),\label{eq:post_normal_mu_2}
+ \end{align} 
+ where the proportionality arises from ignoring the constant $p(\mathcal{D})$ in the first line, and from disregarding all constants that do not depend on $\mu$ in the second line. Recall that these constants for $\mu$ include the variance of $x$, $\sigma^2$, so omitting this quantity is only possible because we are considering the case in which $\sigma^2$ is known. Completing the square in $\mu$ inside the exponential in Eq.~\eqref{eq:post_normal_mu_2}, we obtain (we shall define $\mu_n$ and $\sigma_n^2$ shortly) 
+ \begin{equation}
+ 	p(\mu|\mathcal{D}) \propto \exp\left(-\frac{1}{2\sigma_n^2}(\mu - \mu_n)^2\right).\label{eq:post_normal_mu_3}
+ \end{equation} 
+Since $p(\mu|\mathcal{D})$ must integrate to one, the only probability density proportional to the right-hand side of the previous equation is the Gaussian with mean $\mu_n$ and variance $\sigma_n^2$. That is, the proportionality constant required for equality in the expression above is
+ \begin{equation}
+     \int_\R\exp\left(-\frac{1}{2\sigma_n^2}(\mu - \mu_n)^2\right)\d\mu = (2\pi\sigma_n^2)^{n/2}.
+ \end{equation} 
+ Consequently, we confirm that the chosen prior is indeed conjugate to the Gaussian likelihood, so the posterior is given by the following (Gaussian) density:
+  \begin{equation}
+ 	p(\mu|\mathcal{D}) = \cN(\mu;\mu_n,\sigma_n^2) = \frac{1}{(2\pi\sigma_n^2)^{N/2}}\exp\left(-\frac{1}{2\sigma_n^2}(\mu - \mu_n)^2\right),\label{eq:post_normal_mu_4}
+ \end{equation} 
+where the mean and variance are given, respectively, by
+ \begin{align}
+ 	\mu_n &= \frac{1}{\tfrac{1}{\sigma_0^2} + \tfrac{n}{\sigma^2}} \left(\frac{1}{\sigma_0^2}\mu_0 + \frac{n}{\sigma^2}\bar{x} \right), \quad \text{donde } \bar{x} = \frac{1}{n}\sum_{i=1}^n x_i\label{eq:post_Gm}\\
+ 	\sigma_n &= \left(\frac{1}{\sigma_0^2} + \frac{n}{\sigma^2}\right)^{-1}.\label{eq:post_Gv}
+ \end{align}
+\end{example}
+
+\begin{remark}
+Bayesian updating transforms the parameters of the prior on $\mu$ from $\mu_0$ and $\sigma_0^2$ to $\mu_n$ and $\sigma_n^2$ in Eqs.~\eqref{eq:post_Gm} and \eqref{eq:post_Gv}, respectively. Notice that the posterior parameters are combinations (which can be given a natural interpretation) of the prior parameters and the observed data. In particular, $\mu_n$ is a weighted average of $\mu_0$ (our prior candidate for $\mu$) with weight $\sigma_0^{-2}$ and the sample mean $\bar{x}$ with weight $(\sigma^2/n)^{-1}$, which is the maximum likelihood estimator. 
+
+It is also worth noticing that these weights correspond to the inverse variances, i.e., the precisions, of $\mu_0$ and $\bar{x}$. Finally, observe that $\sigma_n^2$ represents a \emph{parallel sum} of the variances: if we rewrite Eq.~\eqref{eq:post_Gv} in terms of precisions, we see that the initial precision $\sigma_0^{-2}$ is incremented by a contribution from each observed data point, which makes sense because with more information the precision should increase rather than the uncertainty (here represented by the variance).
+\end{remark}
+
+
+\subsection{Bayesian estimators}
+
+So far, we have studied the rol of the prior in Bayesian inference, however, we have not leveraged this setup for building estimators. In particular, recall that the MLE does not incorporate a priori knowledge of the parameter. This can be addressed from a Bayesian standpoint.
+
+\begin{definition}[Bayesian risk]
+For a loss function $L(\theta,\hat\theta)$ and observations $\cD$, the Bayesian risk is the posterior expectation of the loss function, that is
+\begin{equation}
+    R(\hat\theta) = \int_\Omega L(\theta,\hat\theta)p(\theta|\cD)\d\theta.
+\end{equation}
+\end{definition}
+
+
+
+\begin{definition}[Bayesian estimator]
+Given observations $\cD$ and the Bayesian risk $R(\theta)$, an estimator that minimises the Bayesian risk 
+\begin{equation}
+    \theta_\text{Bayes}(\cD) = \arg\min_{\Omega} R(\theta)
+\end{equation}
+is known as Bayesian estimator. We have ignored the explicit dependence of $R(\cdot)$ in $\cD$.
+\end{definition}
+
+We will now define Bayesian estimators corresponding to different loss or risk functions.
+
+\begin{definition}[Bayesian model average]
+The standard case is the quadratic loss function $L_2(\theta,\hat{\theta}) = (\theta-\hat{\theta})^2$, which leads to the estimator given by the posterior mean $\theta_{\mathrm{Bayes}}(\mathcal{D}) = \mathbb{E}[\theta \mid \mathcal{D}]$.
+\end{definition}
+
+
+\begin{definition}[Minimum absolute-error (MAE)]
+Similarly, the cost function $L_1(\theta,\hat\theta) = |\theta-\hat\theta|_1$ results in the estimator that gives the posterior median.
+\end{definition}
+
+Finding a loss function for the maximum a posteriori (MAP) estimator is less straightforward. Let us first consider the case where $\theta \in \Omega$ is discrete and the ``0-1'' loss.
+\[   
+L_\text{0-1}(\theta,\hat\theta) = 
+     \begin{cases}
+       0 &\quad\text{if } \theta = \hat\theta,\\
+       1 &\quad\text{if not}. 
+     \end{cases}
+\]
+The Bayes risk associated to $L_\text{0-1}(\theta,\hat\theta)$ (in the discrete case) takes the form
+\begin{equation}
+    R(\hat\theta) = \Prob{\theta\neq\hat\theta|\cD} = 1-\Prob{\theta = \hat\theta|\cD},
+\end{equation}
+which is minimised by choosing $\hat{\theta}$ such that $\Prob{\theta = \hat\theta|\cD}$ is maximised, i.e., the MAP. 
+
+\begin{definition}[Maximum a posteriori estimator]
+Let $\theta \in \Theta$ be a parameter with posterior $p(\theta |D)$ defined over $\Theta$. We refer to its point estimate given by : 
+$$
+\theta_{MAP}= \underset{\Theta}{\arg\max}\ p(\theta|D),
+$$
+as the \emph{maximum a posteriori} (MAP) estimator. 
+\end{definition}
+
+\begin{remark}
+Notice that it is possible to find the MAP estimate using only a \emph{proportional} version of the posterior, as is common in Bayesian inference, or equivalently by maximising its logarithm. Additional, notice the relationship between the MLE and MAP given by
+$$
+\theta_{MAP} = \underset{\theta \in \Theta}{\arg\max }\ p(\theta|\mathcal{D}) = \underset{\theta \in \Theta}{\arg\max }\ p(\mathcal{D}|\theta)p(\theta)= \underset{\theta \in \Theta}{\arg\max}\left(\underbrace{\log p(\mathcal{D}|\theta)}_{l(\theta)} + \log p(\theta)\right).
+$$
+
+\end{remark}
+
+\begin{remark}
+Observe that the MAP estimator is a \emph{modification} of the MLE, since both share part of the same objective function (the likelihood), with the difference that the MAP additionally includes the \emph{log-prior} term. This can be understood as a form of regularisation of the MLE solution, where the additional term encodes properties of the estimator that may not be revealed by the data alone.
+\end{remark}
+
+\begin{example}[MAP for the mean of the Gaussian model]
+For the linear Gaussian model considered so far, we can compute $\theta_{\mathrm{MAP}}$ for a Gaussian prior with zero mean and variance $\sigma_\theta^2$. This is given by (assuming the noise variance $\sigma_\epsilon^2$ is known):
+\begin{align}
+	\theta_\text{MAP}^\star 	&= \text{argmax } p(Y|\theta,X)p(\theta)\nonumber\\
+	\text{[ind., def.]}\ &= \text{argmax } \prod_{i=1}^N \cN(y_i;\theta^\top x_i,\sigma_\epsilon^2)\cN(\theta;0,\sigma_\theta^2) \nonumber\\
+	&= \text{argmax } \prod_{i=1}^N \frac{1}{\sqrt{2\pi}\sigma_\epsilon} \exp\left({\frac{-1}{2\sigma_\epsilon^2}(y_i-\theta^\top x_i)^2}\right)											\frac{1}{(\sqrt{2\pi}\sigma_\theta)^{M+1}} \exp\left({\frac{-||\theta||^2}{2\sigma_\theta^2}}\right) \nonumber\\
+	 &= \text{argmax } \frac{1}{\sqrt{2\pi}\sigma_\epsilon} \frac{1}{(\sqrt{2\pi}\sigma_\theta)^{M+1}} \exp\left( \sum_{i=1}^N{\frac{-1}{2\sigma_\epsilon^2}(y_i-\theta^\top x_i)^2} -{\frac{||\theta||^2}{2\sigma_\theta^2}}\right) \nonumber\\
+	\text{[log.]}\  &= \text{argmin } \sum_{i=1}^N{(y_i-\theta^\top x_i)^2} +{\frac{\sigma_\epsilon^2}{\sigma_\theta^2}||\theta |^2}.\nonumber 
+	\label{eq:MAP_reg_lin}
+\end{align}
+We can see that by choosing a uniform prior or a Gaussian prior with very large variance, the MAP is equivalent to the MLE. What does this mean? What different behaviour does the MAP promote compared to the MLE in this case?
+% \todo{illustration if possible}  % something similar is done during the tutorial
+\end{example}
+
+
+\subsubsection{Posterior predictive}
+
+In Bayesian inference, predictions play an important role, since after performing inference on a statistical model, we are generally interested in studying how future data will be generated by the model. To this end, we define the Bayesian prediction as
+
+
+\begin{definition}[Posterior predictive]
+For a dataset $\mathcal{D}$ and a parameter $\theta$, the posterior predictive density is given by
+\begin{equation}
+    p(x|\cD) = \int_\Omega p(x|\theta)p(\theta|\cD)\d\theta = \E[p(x|\theta) |\cD],
+\end{equation}
+that is, the expected value of the statistical model with respect to the posterior distribution of the parameter (model).
+
+\end{definition}
+We can now consider the posterior predictive as our \emph{learned} model and generate data from it, where we face the same dilemma as with a point estimator in the previous case: it is possible to consider random samples, the mean, the median, or some interval.
+
+
+\begin{remark}
+The posterior predictive is generally different from the \emph{plug-in} prediction, in which we consider the statistical model $p_{\hat{\theta}}$ based on some (point) estimator $\hat{\theta}$. From this perspective, the posterior predictive is equivalent to considering point estimators and models, but integrating over all of them with respect to the posterior distribution.
+\end{remark}
+
+\begin{example}{Bayesian vs plug-in prediction}
+	As an example of the advantages of a Bayesian approach, we may consider the estimation of the mean of a Gaussian distribution. When very few examples are available, a Bayesian estimation can be a better prediction than a \emph{plug-in} predictive. In Figure \ref{fig:bayesian_plugin} we compare the MLE with a Bayesian estimation of the mean (using a standard normal prior) when only five samples are available.
+\end{example}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/stats_posterior_plugin.pdf}
+    \caption{Bayesian versus frequentist inference of a Gaussian distribution mean.}
+    \label{fig:bayesian_plugin} 
+\end{figure}

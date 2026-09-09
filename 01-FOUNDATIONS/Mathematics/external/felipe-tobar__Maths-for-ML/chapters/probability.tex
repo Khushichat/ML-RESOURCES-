@@ -1,0 +1,730 @@
+%!TEX root = ../lecture_notes.tex
+
+
+\section{Probability}
+\label{cap:probability}
+
+\subsection{Introduction}
+\label{cap:prob_intro}
+
+\textbf{NB:} in this chapter, we follow \cite{pml1Book,deisenroth2020mathematics}. For additional material see \cite{durrett2019probability,bertsekas2008introduction,grimmett2020probability}\\
+
+\noindent The field of probability studies, from a quantitative perspective, how \emph{likely} an event is. Conceptually, and perhaps historically, there are two main interpretations of probability. The first one is \textbf{frequentist probability}, which relates to frequency of occurrence, and then applies only to events that can be repeated an infinite number of times, such as throwing a dice or flopping a coin. As a consequence, this approach to probability fails to assign a probability to events that are impossible to repeat, such as the average temperature of the Earth's surface reaching an all-time maximum in the year 2025. A second interpretation is that of \textbf{Bayesian probability}, which represents uncertainty about the occurrence of an event. This uncertainty might come from different sources, such unknown features in the experiments (epistemological uncertainty) or random components (aleatoric uncertainty). In this case, events need not be repeatable be be assigned with a probability.
+
+A basic yet rigorous understanding of probability theory, definitions and main results is fundamental is central to the construction and applications of ML methods. This is because in ML we design, train and deploy mathematical models that aim to i) capture/quantify uncertainty, and ii) deal with noise-corrupted training data. 
+
+
+\subsubsection{Definitions}
+\label{cap:prob_defs}
+
+To start studying probability, we will consider the outcome $\omega$ of a hypothetical experiment. For instance, this can be throwing a dice, where $\omega$ takes values $\{1,2,3,4,5,6\}$. In this context, we define: 
+
+\begin{definition}[Sample space] The set containing all the possible outcomes $\omega$ of an experiment is called sample space and is denoted by $\Omega$. For the dice example, $\Omega= \{1,2,3,4,5,6\}$.
+\end{definition}
+
+\begin{definition}[Event space] The set $\cA$, referred to as event space, contains all possible subset of the sample space $\Omega$. Therefore, each element $A\in\cA$ represents a possible results of the experiment.
+\end{definition}
+
+\begin{definition}[Probability] The function
+\begin{align}
+ 	 \Pb: \cA &\to [0,1]\\
+ 	 x &\mapsto \Pb(x)
+ \end{align}
+  denotes the probability of the result of the experiment falling inside the elements of $\cA$, that is, $\Pb(A) = \Pb(\omega\in A)$. The function $\Pb$ needs to fulfil some standard properties such as $\Pb(\Omega) = 1, \Pb(\emptyset) = 0,$ and $\Pb(A^c) = 1-\Pb(A)$.
+\end{definition}
+
+\begin{mdframed}[style=discusion, frametitle={\center Discussion: $\cA$ vs $\Omega$}]
+
+Why is the probability defined over $\cA$ and not over $\Omega$? Elaborate over intuitive examples
+
+\end{mdframed}
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Examples}]
+\felipe{Consider basic examples (dice, coin, uniform, rain), and present the sample space, event space, and probability}
+\end{mdframed}
+
+\begin{definition}
+We refer to the triplet $(\Omega,\cA,\Pb)$ as \textbf{probability space}. 
+\end{definition}
+
+\subsubsection{Basic properties}
+\label{cap:prob_basicprop}
+
+The joint probability of events $A$ and $B$ is denoted by
+\begin{equation}
+	\Pb(A\wedge B) =\Pb(A\cap B) = \Pb(A,B).
+\end{equation}
+This follows from the fact that if $\omega\in A$ and $\omega\in B$, then, $\omega\in A\cap B$.
+
+The \textbf{conditional probability} of $A$ occurring, given that the event $B$ occurred, is denoted by 
+\begin{equation}
+	\Pb(A|B) = \frac{\Pb(A,B)}{\Pb(B)},
+\end{equation}
+which is only valid when $\Pb(B)>0$.
+
+Additionally, we say that events $A$ and $B$ are \textbf{independent} iff $\Pb(A,B)=\Pb(A)\Pb(B)$. Observe that this implies that 
+\begin{equation}
+	\Pb(A|B) = \frac{\Pb(A,B)}{\Pb(B)}= \frac{\Pb(A)\Pb(B)}{\Pb(B)} = \Pb(A),
+\end{equation}
+meaning that when $A$ and $B$ are independent, the latter provides no \textbf{information} for $A$.
+
+Lastly, the probability of intersection, i.e., the probability of the events $\omega\in A$ or $\omega\in B$, is
+\begin{equation}
+	\Pb(A \vee B) = \Pb(A) + \Pb(B) - \Pb(A \wedge B).
+\end{equation}
+
+\subsection{Random variables}
+\label{cap:prob_RV}
+
+In general, other than basic toy examples, we do not refer to the underlying experiment and its sample/event spaces. We instead consider \emph{quantities of interest} that result from the outcome of the experiment. Therefore, let us consider a map from the sample space to a target space $\cT$, e.g., $\cT=\R$, $\cT=\N$ or $\cT=\{1,2,3,\ldots,N\}$.
+
+
+\begin{definition}[Random variable] A function 
+\begin{align}
+ 	X: \Omega &\to \cT\\
+ 	\omega &\mapsto X(\omega)
+ \end{align} 
+is referred to as random variable. In general, we will denote the function as $X$ and its value as $X(\omega) = x$, ignoring the explicit dependence on $\omega$.
+\end{definition}
+
+\begin{remark}
+From now on, we will consider the outcome of the experiment (living in the sample space) as the value of the RV; this aims towards a streamlined setup, avoiding the need of a map from $\Omega$ to $\cT$. Accordingly, the event space $\cA$ and the probability $\Pb$ correspond to the outcomes (values) of $X$. We will denote the sample space by $\cX$. 
+\end{remark}
+
+\subsubsection{Discrete RVs}
+\label{cap:prob_disc_RV}
+
+If the sample space is finite or countably infinite, we will say that the RV is discrete. In this case, we denote the probability of the event $X=x$ by $\Pb(X=x)$. 
+
+\begin{definition}[Probability mass function (pmf)] 
+\label{def:pmf}
+For a discrete RV $X\in\cX$, the function 
+\begin{align}
+ 	p_X: \cX &\to [0,1]\\
+ 	x &\mapsto p_X(x)=\Pb(X=x)
+ \end{align} 
+denotes the probability of the event where the RV $X$ takes the value $x\in\cX$. Evidently, 
+\begin{equation}
+	\sum_{x\in\cX} p_X(x) = 1.
+\end{equation}
+\end{definition}
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Discrete RV: time to first heads}]
+
+
+Consider an infinite sequence of independent coin flips, each taking values
+\[
+X_i = 
+\begin{cases}
+	1, & \text{(Heads)} \\
+	0, & \text{(Tails)},
+\end{cases}
+\quad\text{with } \Pb(X_i=1)=p, \ \Pb(X_i=0)=1-p.
+\]
+Define the discrete random variable
+\[
+T = \min\{k \ge 1 : X_k = 1\},
+\]
+the \emph{time of the first heads}. Then $T$ takes values in $\{1,2,3,\dots\}$ and
+\[
+\Pb(T=k)
+= (1-p)^{k-1}p, \qquad k=1,2,\dots
+\]
+This is the \emph{geometric distribution}. Its cdf is
+\[
+F_T(k)
+= \Pb(T \le k)
+= 1-(1-p)^{k}, \qquad k=1,2,\dots
+\]
+and
+\[
+\E[T] = \frac{1}{p}, 
+\qquad 
+\V(T) = \frac{1-p}{p^{2}}.
+\]
+For the particular case of $p=1/2$, we have 
+\[
+\Pb(T=k)
+= \frac{1}{2^k}, \qquad k=1,2,\dots.
+\]
+Where it holds that $\sum_{k=1}^\infty \Pb(T=k) = \sum_{k=1}^\infty \frac{1}{2^k} = 1$.
+
+\end{mdframed}
+
+\subsubsection{Continuous RVs}
+\label{cap:prob_cont_RV}
+
+If $\cX = \R^d$, with $d\geq1$, or any other infinitely-uncountable space, we say that the RV is continuous. In this case, defining a pmf as in Def.~\ref{def:pmf} is not possible: since there is an uncountable number of symbols in the sample space $\cX$, it is not possible to assign a probability strictly greater than zero to each of them, while having a total probability mass equal to one. Therefore, we use the event space and assign probabilities \textbf{to intervals} rather than particular values. 
+
+\begin{definition}[Cumulative distribution function (cdf)] 
+\label{def:cdf}
+For a continuous RV $X\in\cX$, we define the probability of $X$ to be less or equal than a given value $x\in\cX$ by 
+\begin{align}
+ 	P_X: \cX &\to [0,1]\\
+ 	x &\mapsto P_X(x)=\Pb(X\leq x).
+ \end{align} 
+Observe that this also allows to denote the probability of $X$ lying in a bounded interval, that is, 
+\begin{equation}
+	\Pb(a\leq X \leq b) = P_X(b) - P_X(a).
+\end{equation}
+The cdf is monotonically non-decreasing by construction, and, when $\cX = \R$, we have 
+\begin{align}
+	\lim_{x\to -\infty} P_X(x) & = 0\\
+	\lim_{x\to \infty} P_X(x) & = 1.
+\end{align}
+\end{definition}
+
+The idea to assign probabilities to intervals, suggest that there exists a \textbf{density of probability}, that is, an amount of probability mass per unit of length (or \emph{measure}) of the sample space. This is formalised via the following definition. 
+
+
+\begin{definition}[Probability density function (pdf)] 
+\label{def:pdf}
+For a continuous RV $X\in\cX$, the probability density function of $X$ is given by the function 
+\begin{align}
+ 	p_X: \cX &\to \R\\
+ 	x &\mapsto p_X(x)=\frac{d}{dx} P_X(x).
+ \end{align} 
+ This is possible when $P_X$ is differentiable. 
+\end{definition}
+Knowing the pdf, we can express: 
+\begin{equation}
+	\Pb(a\leq X \leq b) = \int_a^bp_X(x)dx = P_X(b) - P_X(a),
+\end{equation}
+which is a direct particular case of the fundamental theorem of Calculus. 
+
+Also, for $\Delta x$ small, we have
+\begin{equation}
+	\Pb(x\leq X \leq x + \Delta x) = \int_x^{x+\Delta x}p_X(x)dx \simeq p(x)\Delta x.
+\end{equation}
+
+Lastly, if the cdf is \textbf{strictly monotonically increasing}, its inverse exists and it is known as the \textbf{quantile function}. 
+
+\begin{mdframed}[style=discusion, frametitle={Discussion}]
+
+Why is the quantile function useful?
+
+
+
+\end{mdframed}
+
+
+
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Gaussian distribution}]
+In Figure \ref{fig:gaussian_pdf} we can see the probability density function and the cumulative density function of the one dimensional Gaussian distribution. We will define this distribution in Section~\ref{cap:prob_Gaussian}.
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/probability_gaussian_pdf_cdf.pdf}
+    \caption{Probability and cumulative density function.}
+    \label{fig:gaussian_pdf} 
+\end{figure}
+
+
+\subsubsection{Properties and identities}
+\label{cap:prob_properties}
+
+Probability can be thought of as an extension of logical reasoning, and the following properties are consistent with such extension. Let us first consider, akin to the definition of event probabilities, the following results. 
+
+Both for discrete (pmf) and discrete (pdf) RVs, we can denote $p(x,y)$ the joint pdf/pmf for RVs $X\in\cX$ and $Y\in\cY$. This can be seen as the probability of the \emph{intersection} event, where $X=x$ and $Y=y$. 
+
+Furthermore, we can write 
+\begin{align}
+	p_X(x) &=  \sum_{y\in\cY}p(x,y)\quad \text{(discrete)}\\
+	p_X(x) &=  \int_{\cY}p(x,y)dy\quad \text{(continuous)}.
+\end{align}
+
+In the ML community, this is known as \textbf{sum rule}, since it allows us to express the density $p(y)$ from a joint density by summing over all possible values.
+
+
+The so called \textbf{product rule} is the decomposition of the joint law as follows
+\begin{equation}
+	p(x,y) = p(y|x)p(x),
+\end{equation}
+which allows us to decompose the joint pmf/pdf using the law of the conditional event $X=x$ given that $Y=y$, and the marginal law of $Y$. A key consequence of the above expression is that, since the factorisation works in both ways, we have 
+\begin{equation}
+	p(x|y) = \frac{p(y|x)p(x)}{p(y)},
+\end{equation}
+which is known as the \textbf{Bayes theorem}. This is a fundamental result in probabilistic ML, since we usually observe measurements $y$ and want to infer parameters or latent variables $x$.
+
+An expression combining the sum and the product rules is the so called \textbf{law of total probability}, where the sum rule is expressed via conditional probabilities. That is,   
+\begin{align}
+		p_X(x) &=  \sum_{y\in\cY}p(x|y)p(y)\quad \text{(discrete)}\\
+	p_X(x) &=  \int_{\cY}p(x|y)p(y)dy\quad \text{(continuous)}.
+\end{align}
+This operation is usually called \textbf{marginalisation}, or \textbf{disintegration} (of $y$). Here, we say that $y$ has been \textbf{integrated out}.
+
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: The Monty Hall problem}]
+
+You are on a game show with three doors: behind one is a car (C), behind the others goats (G).  
+You choose door $1$. The host, who knows what’s behind each door, opens door $3$ revealing a goat.  
+Should you switch to door $2$?
+
+\medskip
+Let $A_i$ be the event that the car is behind door $i$, and $B$ the event that the host opens door $3$.
+
+\[
+P(A_1)=P(A_2)=P(A_3)=\tfrac{1}{3}.
+\]
+Given that you chose door 1, we have:
+\[
+P(B \mid A_1)=\tfrac{1}{2}, \quad P(B \mid A_2)=1, \quad P(B \mid A_3)=0.
+\]
+
+Bayes’ theorem states:
+\begin{align}
+	P(A_1 \mid B)
+	& = \frac{P(B \mid A_1) P(A_1)}{P(B)}\\
+	& = \frac{P(B \mid A_1) P(A_1)}{P(B \mid A_1)P(A_1) + P(B \mid A_2)P(A_2) + P(B \mid A_3)P(A_3)}\\
+	& = \frac{(1/2)(1/3)}{(1/2)(1/3) + (1)(1/3)}\\
+	& = \frac{1}{3}.	
+\end{align}
+
+
+
+Hence
+\[
+P(A_2 \mid B) = \tfrac{2}{3}.
+\]
+
+\textbf{Conclusion:} Switching doubles your chance of winning.
+
+
+\end{mdframed}
+
+\subsubsection{Moments}
+\label{cap:prob_moments}
+
+
+\begin{definition}[Mean] 
+\label{def:mean}
+The mean, or expected value, of an RV $X\in\cX$, often denoted by $\mu = \mu_X$, is defined as
+\begin{align}
+	\E[X] &= \int_\cX xp_X(x)dx\quad\text{(continuous)}\\
+	\E[X] &= \sum_{x\in\cX} xp_X(x)\quad\text{(discrete)},\\
+\end{align}
+ where in the continuous case we have assumed the existence of a pdf. 
+\end{definition}
+Observe that $\E[\cdot]$ is a linear operator, meaning that 
+ \begin{align}
+	\E[aX + b] &= a\E[X] + b\quad a,b\in\R\\
+	\E[\sum_{i=1}^n X_i] &= \sum_{i=1}^n \E[ X_i], \\
+\end{align}
+where $X_i,X_2,\ldots, X_n$ is a collection of arbitrary RVs with finite mean. 
+
+The definition above also allows for calculating the mean of a transformation of the RV, this is because for a function $f:\cX \to \R$, the quantity $f(X)$ is also an RV, and thus its mean is $\E[f(X)] = \int_\cX f(x)p_X(x)dx$. In particular, this enables the following definition.
+
+
+\begin{definition}[Variance] 
+\label{def:variance}
+The variance measures the \textbf{spread} of a distribution (with respect to its mean) and it is given by
+\begin{align}
+	\V[X] &= \E[(X-\mu_X)^2]\\
+				&= \int_\cX (x-\mu_X)^2p_X(x)dx\\
+				&= \int_\cX (x^2 -2x\mu_X+\mu_X^2)^2p_X(x)dx\\
+				&= \E[X^2] -\mu_X^2,
+\end{align}
+ where the discrete case is obtained similarly. 
+\end{definition}
+
+\begin{definition}[Covariance]
+\label{def:covariance}
+The covariance measures the \textbf{joint variability} of two random variables $X$ and $Y$, and it is given by
+\begin{align}
+	\Cov[X,Y] &= \E\!\left[(X - \mu_X)(Y - \mu_Y)\right]\\
+	           &= \int_{\cX\times\cY} (x - \mu_X)(y - \mu_Y)\,p_{X,Y}(x,y)\,dx\,dy\\
+	           &= \E[XY] - \E[X]\E[Y].
+\end{align}
+A positive covariance indicates that $X$ and $Y$ tend to increase together, while a negative value indicates that when one increases, the other tends to decrease.
+\end{definition}
+Additionally, a related quantity is the \textbf{standard deviation}, given by 
+\begin{equation}
+ 	\text{std}[X] = \sqrt{\V[X]}.
+ \end{equation} 
+
+A list of relevant properties of the variance are: 
+
+\begin{itemize}
+  \item \textbf{Definition:} $\V(X) = \E[(X - \E[X])^2]$.
+  \item \textbf{Equivalent form:} $\V(X) = \E[X^2] - (\E[X])^2$.
+  \item \textbf{Shift invariance:} $\V(X + c) = \V(X)$.
+  \item \textbf{Scaling:} $\V(aX) = a^2 \V(X)$.
+  \item \textbf{Additivity (independent $X,Y$):} $\V(X+Y) = \V(X) + \V(Y)$.
+  \item \textbf{General case:} $\V(X+Y) = \V(X) + \V(Y) + 2\V(X,Y)$.
+  \item \textbf{Nonnegativity:} $\V(X) \ge 0$, with equality iff $X$ constant.
+\end{itemize}
+
+As a consequence, let us consider an arbitrary sequence of \textbf{independent} RVs $X_i,X_2,\ldots, X_n$ and $a,b\in\R$, to highlight two additional key properties of the variance: 
+\begin{align}
+	\V[aX_1 + b] &= a^2\V[X_1]\\
+	\V[\sum_{i=1}^n X_i]	&= \sum_{i=1}^n\V[ X_i]
+\end{align}
+
+\subsection{Some particular RVs}
+\label{cap:prob_someRVs}
+
+\subsubsection{Bernoulli and binomial}
+\label{cap:prob_bernoulli}
+
+Consider tossing a coin, where $\Pb(\text{heads})=\theta$ with $0\leq \theta \leq 1$. Note that, as a consequence, $\Pb(\text{tails})=1-\theta$. This is called the Bernoulli distribution, and it is written as 
+\begin{equation}
+	Y\sim\ber(\theta).
+\end{equation}
+Bernoulli's pmf is given by 
+\[
+p_\ber(y) =
+\begin{cases}
+\theta, & y = 1, \\
+1 - \theta, & y = 0, \\
+0, & \text{otherwise.}
+\end{cases}
+\]
+More concisely, we can write the pmf as 
+\begin{equation}
+	p_\ber(y) = \theta^y(1-\theta)^{1-y}.
+\end{equation}
+
+\begin{mdframed}[style=discusion, frametitle={Bernoulli likelihood}]
+
+The expression $p_\ber(y) = \theta^y(1-\theta)^{1-y}$, will be fundamental in ML, since this close form expression will allow for optimising the parameters of the Bernoulli distribution in the light of data.
+
+\end{mdframed}
+
+
+Let us now consider $N$ Bernoulli trials, denoted $Y_i\sim \ber(\cdot|\theta), i=1,\ldots,N$ -- this can be thought of as tossing a coin $N$ times. Define the RV $S$ as the total number of heads, that is
+\begin{equation}
+ 	S = \sum_{i=1}^N I(y_i = 1).
+ \end{equation} 
+ The distribution of $S$ is 
+ \begin{equation}
+ 	\bin(s|N,\theta) = \binom{N}{s}\theta^s(1-\theta)^{N-s},
+ \end{equation}
+which is known as the Binomial distribution, where $\binom{N}{s} = \frac{N!}{(N-s)!s!}$.
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Logistic regression}]
+
+Within ML, the Bernoulli distribution is largely used for (probabilistic) classification. In such case we want to predict a binary variable $y\in\{0,1\}$, representing a sample being class 1 (and not class 0), conditional to some observed features $x\in\R^d$. We can then model $p(y=1)$ as 
+\begin{equation}
+	p(y|x,\theta) = \ber(y|f(x,\theta)).
+\end{equation}
+Since $f(x,\theta)$ represents the parameter of $\ber(y)$, we need $0\leq f(x,\theta) \leq 1$. However, to avoid that requirement, we can leave $f(x,\theta)$ unconstrained and write 
+\begin{equation}
+	p(y|\theta,x) = \ber(y|\sigma(f(x,\theta))),
+\end{equation}
+where 
+\begin{equation}
+	\sigma(a) = \frac{1}{1+e^{-a}}
+\end{equation}
+is the logistic function. 
+When we choose $f(x,\theta) = \theta_1^\top x + \theta_2$, we obtain the logistic regression model.
+
+We show the sigmoid function in Figure \ref{fig:sigmoid}. A visualisation of an adjusted logistic regression model was shown in Figure\ref{fig:lr_crickets}.
+\end{mdframed}
+
+\noindent\begin{minipage}{0.58\textwidth}
+The extension of the Bernoulli (resp.~Binomial) distribution to the multivariate case, i.e., when the output of the experiments take values on categories $\{1,2,\ldots,K\}$ with $K>2$ is known as the categorical (resp.~Multinomial). These distributions will be left for personal study. 
+\end{minipage}\hfill
+\begin{minipage}{0.4\textwidth}
+	\centering
+	\includegraphics[width=0.8\textwidth]{img/probability_sigmoid.pdf}
+	\captionof{figure}{Visualisation of a sigmoid function.}
+	\label{fig:sigmoid}
+\end{minipage}
+
+\vspace{1cm}
+
+
+\subsubsection{Uniform distribution}
+\label{cap:prob_uniform}
+
+The uniform distribution models situations in which all outcomes within a set are \textbf{equally likely}.
+
+\paragraph{Discrete case.}
+Consider a random variable $Y$ that can take $K$ equally probable values $\{1,2,\ldots,K\}$.  
+Then
+\begin{equation}
+	Y \sim \unif(\{1,\ldots,K\}),
+\end{equation}
+and its pmf is
+\begin{equation}
+	p_\unif(y) = 
+	\begin{cases}
+		\frac{1}{K}, & y\in\{1,\ldots,K\},\\
+		0, & \text{otherwise.}
+	\end{cases}
+\end{equation}
+The mean and variance are
+\[
+\E[Y] = \frac{K+1}{2}, \qquad \V[Y] = \frac{K^2-1}{12}.
+\]
+
+\paragraph{Continuous case.}
+Let $X$ be a continuous random variable uniformly distributed over the interval $[a,b]$:
+\begin{equation}
+	X \sim \unif(a,b),
+\end{equation}
+with pdf
+\begin{equation}
+	p_\unif(x) = 
+	\begin{cases}
+		 \frac{1}{b-a}, & a \le x \le b,\\
+		 0, & \text{otherwise.}
+	\end{cases}
+\end{equation}
+The expectation and variance are given by
+\[
+\E[X] = \frac{a+b}{2}, \qquad \V[X] = \frac{(b-a)^2}{12}.
+\]
+
+\begin{mdframed}[style=discusion, frametitle={Uniform likelihood}]
+The uniform distribution represents \textbf{maximum uncertainty} within a range — every value is equally probable.
+In machine learning, uniform priors are often used to express a lack of prior knowledge about a parameter, or as
+initial distributions in random sampling (e.g., parameter initialisation or Monte Carlo methods).
+\end{mdframed}
+
+
+\subsubsection{Gaussian distribution}
+\label{cap:prob_Gaussian}
+
+The pdf the (scalar) Gaussian RV $X$ is given by 
+\begin{equation}
+	\cN(x|\mu,\sigma^2) = \frac{1}{\sqrt{2\pi\sigma^2}}e^{-\frac{1}{2\sigma^2}(x-\mu)^2},
+\end{equation}
+when $\mu=0$ and $\sigma=1$, we say that $X$ is a standard normal. 
+
+\begin{mdframed}[style=discusion, frametitle={Why Gaussian}]
+
+The Gaussian distribution is widely used for modelling continuous RVs, this is, in part, because: 
+
+\begin{itemize}
+	\item Central limit theorem: The scaled sum of multiple independent RVs, with different distributions, converges to a Gaussian RVs
+	\item The Gaussian distribution is the distribution with the maximum entropy (fewer structural assumptions) for a fixed variance
+	\item Its parameters are easy to interpret: the pdf is in fact parametrised by its mean and variance.
+	\item The maths are simple: this is key in applications
+\end{itemize}
+
+\end{mdframed}
+
+The Gaussian distribution is central to model \textbf{observation noise}, and therefore is key in regression models. That is, one can consider a linear regression models where
+
+\begin{equation}
+	Y|x \sim \cN(y|a^\top x + b,\sigma^2),
+\end{equation}
+which is equivalent to 
+\begin{equation}
+	y = a^\top x + b + \epsilon,
+\end{equation}
+where $\epsilon \sim \cN(0,\sigma^2)$.
+
+\paragraph{Multivariate Gaussian.}
+Let $\mathbf{X} \in \mathbb{R}^d$ be a $d$-dimensional random vector. The multivariate Gaussian distribution is defined as
+\begin{equation}
+	\mathbf{X} \sim \cN(\boldsymbol{\mu}, \Sigma),
+\end{equation}
+where $\boldsymbol{\mu} \in \mathbb{R}^d$ is the mean vector and $\Sigma \in \mathbb{R}^{d\times d}$ is the covariance matrix (symmetric positive definite). Its pdf is
+\begin{equation}
+	p(\mathbf{x}) = \frac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}} 
+	                 \exp\Biggl\{-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^\top \Sigma^{-1} (\mathbf{x}-\boldsymbol{\mu}) \Biggr\}.
+\end{equation}
+
+Some observations about the MVN listed as follows: 
+\begin{itemize}
+	\item The mean vector $\boldsymbol{\mu}$ gives the expected value of each component.
+	\item The covariance matrix $\Sigma$ encodes the variance of each component and the pairwise correlations.
+	\item Linear transformations of Gaussian vectors are still Gaussian: if $\mathbf{X} \sim \cN(\boldsymbol{\mu},\Sigma)$ and $A$ is a matrix, $A\mathbf{X} + b \sim \cN(A\boldsymbol{\mu}+b, A \Sigma A^\top)$. This enables sampling of multivariate Gaussians with arbitrary mean and covariance.
+	\item Central in probabilistic ML: used in multivariate regression, Gaussian processes, PCA, and Bayesian inference.
+\end{itemize}
+
+Recall that Figure \ref{fig:lr_crickets} shows a mixture of two two-dimensional Gaussian distributions with different covariance matrices.
+
+
+\subsubsection{Other distributions}
+\label{cap:prob_otherdist}
+
+There are several other distributions that are widely used in statistics and machine learning, but we will not cover them in detail due to time constraints. These include, among others:
+
+
+\begin{itemize}
+    \item \textbf{Heavy-tailed:} Student's $t$, Cauchy
+    \item \textbf{Positive-only:} Chi-square, Gamma, inv-Gamma, Exponential, half Gaussian
+    \item \textbf{Bounded / shape-flexible:} Beta, Laplace
+\end{itemize}
+
+These distributions are frequently used as priors, for modelling non-Gaussian noise, or in robust statistical methods.
+
+
+\subsection{Transformations of RVs distributions}
+\label{cap:prob_transRVs}
+
+In ML, we are interested in the construction of expressive \textbf{generative models}, i.e., probability distributions. Despite having a large collection of known distributions, sometimes we need to design purpose-specific models; this is achieved by transforming a given RV. 
+
+Consider $X\sim p_X(\cdot)$ and $Y=f(X)$ a deterministic transformation. We are interested in computing $p_Y(y)$.
+
+The discrete case is straightforward, as we just need to sum over the possible (discrete) values. That is, 
+\begin{equation}
+	p_Y(y) = \sum_{x:y=f(x)}p_X(x).
+\end{equation}
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Uniform into binary}]
+Consider 
+\begin{equation}
+	p_X = \unif(\{0,1,\ldots,9\}),
+\end{equation}
+and 
+\[
+y = f(x) =
+\begin{cases}
+1, & \text{if } x \text{ is odd}, \\[4pt]
+0, & \text{if } x \text{ is even.}
+\end{cases}
+\]
+
+\end{mdframed}
+
+The continuous case is a bit more involved, since we cannot directly sum over all possible values of the RV. However, we can work with the cdf to show that 
+\begin{equation}
+	P_Y(y) = \Pb(Y\leq y) = \Pb(f(x)\leq y) = \Pb(x\in\{x|f(x)\leq y\}).
+\end{equation}
+Let us notice that if $f$ is invertible, we can rely on the \textbf{change of variable theorem}, which states that
+\begin{equation}
+	\label{eq:CVT_scalar}
+ 	p_Y(y) = p_X(x)\left|\frac{dx}{dy}\right|.
+ \end{equation} 
+This identity can be proven using the cdf. When $f$ is invertible, we can denote $g=f^{-1}$ and note that (assuming that $f$ is non-decreasing)
+\begin{equation}
+	P_Y(y) = \Pb(Y\leq y) = \Pb(f(x)\leq y)= \Pb(x\leq g(y)) = P_X(g(y)).
+\end{equation}
+We can now take the derivative, to give: 
+\begin{equation}
+	p_Y(y) = \frac{d}{dy}P_X(g(y)) = \frac{dP_X(g(y))}{dx}\frac{dx}{dy}= p_X(g(y))\frac{dx}{dy}.
+\end{equation}
+If $f$ had been non-increasing, we would have obtained the same expression with the reversed sign. Therefore, we conclude eq.~\eqref{eq:CVT_scalar}.
+
+In the multivariate case, the CVT reads
+\begin{equation}
+	\label{eq:CVT_vector}
+ 	p_Y(y) = p_X(x)\left|\text{det}J_q(y)\right|,
+ \end{equation}
+ where $J_q(y) = \frac{dg(y)}{dy}$ is the Jacobian of $g=f^{-1}$. 
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: $\chi^2$ family of distributinons.}]
+A random variable $Z$ is said to distribute according to a $\chi^2$ (denoted $Z \sim \chi^2$) when $Z = \sum^k_{i=1} X^2_i$ for $X\sim\mathcal{N}(0,1)$. We provide a visualisation of the probability density function of $\chi^2$ distributions for various $k$ in Figure \ref{fig:parabola_momentum}.
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/probability_xi-squared.pdf}
+    \caption{Gaussian distribution and $\chi^2$ distribution for different $k$ parameters.}
+    \label{fig:parabola_momentum}
+\end{figure}
+
+
+\subsection{Sampling}
+\label{cap:prob_sampling}
+
+Consider a set $\{x_1,x_2,\ldots,x_N\}$ of independent and identically distributed (i.i.d.) samples of an RV $X\sim p_X$. We are interested in approximating the law $p_X$, and also computing expectations wrt it. An empirical estimate of the law of $X$ is the so called \textbf{histogram}
+\begin{equation}
+	P_N(x) = \frac{1}{N} \sum_{i=1}^N \delta_{x_i}(x),
+\end{equation}
+where $\delta_{x_i}(\cdot)$ denotes de delta-Dirac mass in $x_i$. 
+
+\begin{mdframed}[style=discusion, frametitle={\center Real approximation?}]
+
+Does $P_N(x)$ become more and more similar to the true law of $X$ as $N$ grows? 
+
+\end{mdframed}
+
+Notice that $P_N$ allows to compute (approximate) expectations. Let us consider a function $f: x \mapsto f(x)$, and 
+\begin{equation}
+	I_f \eqdef  \int f(x)p(x)dx \simeq f(x)P_N(x) = \frac{1}{N} \sum_{i=1}^{N} f(x_i) \eqdef I_N. 
+\end{equation}
+Due to the Strong Law of Large Numbers (SLLN), we know that $I_N$ gets \textbf{arbitrarily close} to $I_f$ as $N\to\infty$. This approach to computing expectation is referred to as \textbf{Monte Carlo approximation}.
+
+A relevant question is how to generate the samples needed to approximate $P_N$, this is known as \textbf{sampling}. When sampling directly from a distribution is not possible, there are three main approaches to sampling as follows:
+
+\begin{itemize}
+    \item \textbf{Rejection sampling:}  
+    Draw candidate samples $x' \sim q(x)$ from an easy-to-sample \emph{proposal distribution} $q(x)$, and accept $x'$ with probability
+    \[
+        \alpha = \frac{p(x')}{M q(x')}, \quad \text{for } M \ge \sup_x \frac{p(x)}{q(x)}.
+    \]
+    Accepted samples are distributed according to the target $p(x)$. Simple but inefficient if $q(x)$ poorly matches $p(x)$.
+
+    \item \textbf{Importance sampling:}  
+    Draw samples $x_i \sim q(x)$ and compute weighted estimates of expectations:
+    \[
+        \mathbb{E}_p[f(X)] = \int f(x) p(x) dx \simeq \frac{1}{N} \sum_{i=1}^N f(x_i) w_i, \quad w_i = \frac{p(x_i)}{q(x_i)}.
+    \]
+    Useful when direct sampling from $p$ is difficult. Forms the basis for many Bayesian inference methods.
+
+    \item \textbf{Markov Chain Monte Carlo (MCMC):}  
+    Construct a Markov chain $(X_1, X_2, \dots)$ such that its stationary distribution is $p(x)$. For example, the Metropolis-Hastings algorithm updates $X_t \to X_{t+1}$ via:
+    \[
+        X_{t+1} = 
+        \begin{cases}
+            x', & \text{with probability } \min\Big(1, \frac{p(x') q(x_t|x')}{p(x_t) q(x'|x_t)}\Big),\\
+            X_t, & \text{otherwise}.
+        \end{cases}
+    \]
+    Powerful for high-dimensional or complex distributions, but requires monitoring convergence.
+\end{itemize}
+
+These methods are central to probabilistic machine learning, Bayesian inference, and situations where exact integration is intractable.
+
+\paragraph{Hierarchical sampling.}
+
+In some settings involving more than one random variable, sampling is naturally performed by
+\textbf{sampling in stages}.   In this case, a random variable $X$ is generated by first sampling an auxiliary variable
+$Z$, and then sampling $X$ conditional on $Z$.  
+This is called \textbf{hierarchical sampling} (or sampling from a hierarchical
+model).
+
+Formally, if $Z \sim p(z)$ and $X \mid Z=z \sim p(x \mid z)$ is possible to sample, then sampling from the \textbf{marginal} distribution $p(x)$ is obtained by:
+\[
+z \sim p(z), \qquad x \sim p(x \mid z).
+\]
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Gaussian mixture.}]
+	The Gaussian mixture model (GMM) is a random variable with a pdf given by a mixture of Gaussian components. For mixture weights $\pi_k \ge 0$, with $\sum_{k=1}^K \pi_k = 1$, and component
+	densities $X \mid Z=k \sim \mathcal{N}(\mu_k,\Sigma_k)$, the marginal density of $X$ is
+	\[
+	p(x)
+	= \sum_{k=1}^K \pi_k \,
+	\mathcal{N}(x \mid \mu_k,\Sigma_k).
+	\]
+	
+	When $K=2$, we can define the component index as the RV $Z \in \{1,2\}$. Therefore, a component can be chosen with
+	\[
+	\Pb(Z=1)=\pi,\qquad \Pb(Z=2)=1-\pi,
+	\]
+	and then as sample of $X$ can be obtained via: 
+	\[
+	X \mid (Z=1) \sim \mathcal{N}(\mu_1,\sigma_1^2),
+	\qquad
+	X \mid (Z=2) \sim \mathcal{N}(\mu_2,\sigma_2^2).
+	\]
+
+	\textbf{The extension to arbitrary $K>2$ is left as an exercise.} Notice that in this case, the component index $Z$ is given by a Categorical distribution with parameters $\pi_k \ge 0$, with $\sum_{k=1}^K \pi_k = 1$.
+\end{mdframed}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

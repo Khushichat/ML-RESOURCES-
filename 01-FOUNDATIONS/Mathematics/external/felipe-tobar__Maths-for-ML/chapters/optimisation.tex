@@ -1,0 +1,747 @@
+%!TEX root = ../lecture_notes.tex
+
+
+\section{Optimisation}
+\label{cap:optimisation}
+
+\textbf{NB:} in this chapter, we follow \cite{pml1Book} and \cite{deisenroth2020mathematics}. For a deeper presentation of the topics covered here, also see \cite{nesterov2018lectures} and \cite{boyd2004convex}.\\
+
+\noindent Optimisation is central to ML, since models are \emph{trained} by minimising a loss function (or optimising a reward function). In general, model design involves the definition of a training objective or \textbf{loss}, that is, a function that denotes \textbf{how well a model fits the data}. This training objective is a function of the training data and a chosen model, the latter usually represented by its parameters. The best model is thus chosen by optimising the loss function. 
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Linear regression (LR)}]
+
+In the LR setting, we aim to determine the function
+\begin{align}
+  f \colon \R^M &\to \R\nonumber\\
+  x &\mapsto f(x)=a^\top x + b,\quad a\in\R^M,b\in\R
+   \label{eq:reg_lin_fn} 
+\end{align}
+conditional to a set of observations
+\begin{equation}
+	\datos=\{(x_i,y_i)\}_{i=1}^N\subset \R^M \times \R.
+	\label{eq:training_set}
+\end{equation}
+ Using least squares, the function $f$ is chosen via minimisation of the sum of the square differences between observations $\{y_i\}_{i=1}^N$ and predictions $\{f(x_i)\}_{i=1}^N$. That is, we aim to minimise the loss:
+\begin{equation}
+	J(\datos,f) = \sum_{i=1}^N(y_i-f(x_i))^2 = \sum_{i=1}^N(y_i-a^
+	\top x_i - b)^2.
+	\label{eq:least_squares_cost}
+\end{equation}
+We show an example of a linear model learnt from data in Figure \ref{fig:lr_crickets}.
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_example_lr_crickets.pdf}
+    \caption{Example of a linear regression model minimising the least squares loss.}
+    \label{fig:lr_crickets} 
+\end{figure}
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Logistic regression}]
+
+Here, we aim to determine the function
+\begin{align}
+  f \colon \R^M &\to \R\nonumber\\
+  x &\mapsto f(x)= \frac{1}{1 + e^{-\theta^\top x+b}},\quad \theta\in\R^M, b\in\R,
+   \label{eq:log_reg_fn} 
+\end{align}
+conditional to the  observations
+\begin{equation}
+	\datos=\{(x_i,c_i)\}_{i=1}^N\subset \R^M \times \{0,1\}.
+	\label{eq:training_set_classif}
+\end{equation}
+ The standard loss function for the classification problem is the cross entropy, given by:
+\begin{align}
+	J(\datos,f) &= -\frac{1}{N} \sum_{i=1}^N \left(c_i\log f(x_i) + (1-c_i)\log(1-f(x_i))\right)\\
+				&=  \frac{1}{N} \sum_{i=1}^N \left( \log(1+e^{-\theta^\top x+b}) -y_i(-\theta^\top x+b)  \right).
+	\label{eq:x_entropy_cost}
+\end{align}
+Figure \ref{fig:log_reg_example} shows an example of a binary classification task minimising the cross entropy to separate data generated from two Gaussian distributions.
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_example_logreg.pdf}
+    \caption{Example of a logistic regression model to classify data from two Gaussians.}
+    \label{fig:log_reg_example}
+\end{figure}
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Clustering ($K$-means)}]
+
+Given a set of observations
+\begin{equation}
+	\datos=\{x_i\}_{i=1}^N\subset \R^M,
+	\label{eq:training_set_clustering}
+\end{equation}
+we aim to find cluster centres (or prototypes) $\mu_1,\mu_2,\ldots, \mu_K$ and \emph{assignment variables} $\{r_{ik}\}_{i,k=1}^{N,K}$, to minimise the following loss 
+\begin{align}
+	J(\datos,f) = \sum_{i=1}^N\sum_{k=1}^K r_{ik} ||x_i-\mu_k||^2.
+	\label{eq:clustering_cost} 
+\end{align}
+An example of a $K$-means model after the loss minimisation is shown on Figure \ref{fig:kmeans_example}
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_example_kmeans.pdf}
+    \caption{Implementation of the $K$-means method to clustering data from two Gaussians. The figure shows the learnt centroids (black cross) and the colours correspond to the cluster assignments.}
+    \label{fig:kmeans_example}
+\end{figure}
+
+
+\subsection{Terminology} % (fold)
+\label{sub:opt_terminology}
+
+We denote an optimisation problem as follows: 
+
+\begin{equation}
+	\min_{x\in\cX} f(x), \text{~ s.t.,~ } g_i(x)\leq 0,~  h_j(x) = 0,~ i=1,\ldots,I,~ j=1,\ldots,J.
+\end{equation}
+We describe the components of this statement in detail: 
+
+\begin{itemize}
+	\item \textbf{Objective function:} The function $f:\cX\to \R$ is the quantity to be minimised, with respect to $x$. 
+	\item \textbf{Optimisation variable:} Minimising $f$ requires finding the value of $x$, such that $f(x)$ is minimum. This is also written as
+	\begin{equation}
+	x_\star = \argmin_{x\in\cX} f(x), \text{~ s.t.,~ } g_i(x)\leq 0,~  h_j(x) = 0.
+	\end{equation}
+	\item \textbf{Restrictions:} These are denoted by the functions $g_i$ and $h_i$ above, which describe the requirements for the optimiser in the form of equalities and inequalities, respectively. 
+	\item \textbf{Feasible region:}  This is the subset of the domain that complies with the restrictions, that is 
+	\begin{equation}
+		C = \{x\in\cX, \text{~ s.t.,~ } g_i(x)\leq 0,~  h_j(x) = 0,~ i=1,\ldots,I,~ j=1,\ldots,J \}.
+	\end{equation}
+	\item \textbf{Local / global optima.} Values for the optimisation variable that solve the optimisation problem either locally or globally. More formally: 
+	\begin{align}
+		\text{$x_\star$ is a local optima} &\iff \exists \lambda>0 \text{~ s.t.~ }  x_\star = \argmin_{ x\in\cX \text{~ s.t.~ } ||x-x_\star||\leq \lambda } f(x). \\
+		\text{$x_\star$ is a global optima} &\iff x_\star = \argmin_{ x\in\cX } f(x). 
+	\end{align}
+\end{itemize}
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Unique and non-unique closed form minima}]
+In unconstrained optimisation, we have functions that have a unique global minimum and others that have more than one. For instance, Figure \ref{fig:example_local_global} shows $(x-1)^2 + (y+2)^2$ on the left, which has a unique minimiser on $(x, y) = (1, -2)$ and $(x^2-1)^2 + (y^2 -1)^2$ on the right, where every global minimiser belongs to the set $\{(x,y) : x=+-1 \land y=+-1\}$.
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_example_2d_parametric.pdf}
+    \caption{Functions with a unique (left) and non-unique (right) global minima.}
+    \label{fig:example_local_global}
+\end{figure}
+
+
+\begin{mdframed}[style=discusion, frametitle={\center Interplay between constraints and local/global optima}]
+On the other hand, we may be presented with functions such as $f(x,y) = \sin(x)*\sin(y) + 0.1(x^2+y^2)$, which has a global minimum but also local minima. Figure \ref{fig:example_restricted_minima} shows how different restrictions change the number and type of optima. In this case, when restricting the minimisation problem to the circle centred in $(1.5,1)$ with radius $2$, we observe a minimiser that is not the global minimum of the unconstrained problem (an unfeasible point) nor one of the local minima.
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.45\textwidth]{img/optimisation_example_nonconvex.pdf}
+	\includegraphics[width=0.45\textwidth]{img/optimisation_example_nonconvex_constrained.pdf}
+    \caption{Minima for constrained (left) and unconstrained (right) problems.}
+    \label{fig:example_restricted_minima}
+\end{figure}
+
+
+% subsection terminology (end)
+
+\subsection{Continuous unconstrained optimisation} % (fold)
+\label{sec:continuous_optimisation}
+
+We will ignore constrains in this section, and focus on problems of the form
+
+\begin{equation}
+	\theta \in \argmin_{\theta\in\Theta} L(\theta).
+\end{equation}
+We emphasise that if $\theta_\star$ satisfies the above, then
+\begin{equation}
+	\forall \theta\in\Theta,~ L(\theta_\star) \leq L(\theta),
+\end{equation}
+meaning that it is a \textbf{global} optimum. However, as this might be very hard to find, we are also interested in local optima, that is, $\theta_\star$  such that 
+\begin{equation}
+\exists\, \delta > 0  \;\; 
+\text{s.t.} \;\; \forall\, \theta \in \Theta \;\; 
+\|\theta - \theta_\star\| < \delta 
+\;\Rightarrow\;
+L(\theta_\star) \le L(\theta).
+\end{equation}
+
+We now review the \textbf{optimality conditions}.
+
+\begin{assumption}
+The loss function $L$ is twice differentiable.
+\end{assumption}
+
+Denoting $g(\theta) = \nabla_\theta L(\theta)$ and $H(\theta) = \nabla_\theta^2L(\theta)$, we can state the following optimality conditions. 
+
+\begin{itemize}
+	\item \textbf{First order necessary condition:} If $\theta_\star$ is a local minimum, then 
+	\begin{itemize}
+		\item $\nabla_\theta L(\theta_\star)=0$.
+	\end{itemize}
+	\item \textbf{Second order necessary condition:} If $\theta_\star$ is a local minimum, then 
+	\begin{itemize}
+		\item $\nabla_\theta L(\theta_\star)=0$
+		\item $\nabla^ 2_\theta L(\theta_\star)$ is positive semidefinite
+	\end{itemize}
+	\item \textbf{Second order sufficient condition:} If $\theta_\star$ is a local minimum if and only if 
+	\begin{itemize}
+		\item $\nabla_\theta L(\theta_\star)=0$
+		\item $\nabla^ 2_\theta L(\theta_\star)$ is positive definite
+	\end{itemize}
+\end{itemize}
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: different stationary points}]
+
+Let us consider the function
+\begin{align}
+  f \colon \R^2 &\to \R\nonumber\\
+  x &\mapsto f(x)=(p-1)x^2 + (p+1)y^2,\quad p\in\R
+   \label{eq:example_fn_stationary_points} 
+\end{align}
+Observe that
+\begin{equation}
+	\nabla f = \begin{bmatrix}   2(p-1)x \\ 2(p+1)y   \end{bmatrix},
+	\label{eq:nabla_example_fn_stationary_points}
+\end{equation}
+meaning that the only stationary points is  $(x,y) = (0,0)$. Furthermore, 
+\begin{equation}
+	\nabla^2 f = \begin{bmatrix}   2(p-1) & 0 \\ 0 & 2(p+1)   \end{bmatrix},
+	\label{eq:nabla2_example_fn_stationary_points}
+\end{equation}
+where we have 3 possible cases: 
+
+\begin{itemize}
+	\item $p>1$: The stationary point is a minimum
+	\item $-1<p<1$: The stationary point is a \emph{saddle point}
+		\item $p<-1$: The stationary point is a maximum
+\end{itemize}
+Figure \ref{fig:critical_points} shows the function behaviour for different $p$. What happens when $|p|=1$?
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_2d_critical_points.pdf}
+    \caption{Different types of critical points for $f(x,y)=(p-1)x^2 + (p+1)y^2$.}
+    \label{fig:critical_points} 
+\end{figure}
+
+
+\subsection{Convex optimisation}
+\label{subsec:convex_opt}
+
+
+This setting is defined by having a convex objective function and a convex feasible region. Critically, in the setting of convex optimisation a local minimum (according to the first/second order conditions presented above) is a global minimum. We next formally provide the relevant definitions.
+
+\begin{definition}[Convex set] $\cS$ is a convex set if $\forall x,x'\in\cS$, we have:
+\begin{equation}
+	\lambda x + (1 - \lambda)x' \in \mathcal{S},
+	\quad \forall\, \lambda \in [0, 1].
+\end{equation}
+\end{definition}
+For illustration, Figure \ref{fig:convex_nonconvex_sets} shows two convex and two non-convex sets.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_convex_and_nonconvex_regions.pdf}
+    \caption{Examples of convex and non-convex sets, highlighted in blue.}
+    \label{fig:convex_nonconvex_sets} 
+\end{figure}
+
+
+\begin{definition}[Epigraph of a function] The epigraph of a function $f:\cX\to\R$ is the set defined by the region above the graph of the function, that is, 
+\begin{equation}
+	\operatorname{epi}(f) = \{\, (x, t) \in \cX \times \R \mid f(x) \le t \,\}.
+\end{equation}
+
+
+\begin{definition}[Convex function] $f$ is a convex function if its epigraph is convex. Equivalently, $f$ is convex is it is supported on a convex set and $\forall x,x'\in\cX$
+\begin{equation}
+	f\bigl(\lambda x + (1 - \lambda)x'\bigr)
+	\;\leq\;
+	\lambda f(x) + (1 - \lambda) f(x'),
+	\quad \forall\, \lambda \in [0, 1].
+\end{equation}
+Furthermore, is the inequality is strict, we say that the function is \textbf{strictly convex}.
+\end{definition}
+
+\end{definition}
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Convex functions (in 1D)}]
+
+The following are convex function from $\R$ to $\R$:
+
+\begin{itemize}
+	\item $f(x) = x^2$
+	\item $f(x) = e^{ax},\, a\in\R$
+	\item $f(x) = -\log x$
+	\item $f(x) = x^a,\, a>1,\, x>0$
+	\item $f(x) = |x|^a,\, a\geq 1$
+	\item $f(x) = x\log x,\, x>0$
+\end{itemize}
+Figure \ref{fig:epigraphs} shows the epigraphs for these functions.
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_convex_1d_examples.pdf}
+    \caption{Convex 1D functions with their epigraph in light blue.}
+    \label{fig:epigraphs} 
+\end{figure}
+% TO DO: add epigraph for non-convex functions.
+
+
+We now review some important results in convex optimisation
+
+\begin{proposition}
+Consider $f:\cX\subset\R\to\R$ differentiable. We have that if $f'(x)\geq 0\, \forall x\in\R$, $f$ is non-decreasing
+\end{proposition}
+\begin{proof}
+	By the fundamental theorem of calculus, we have that for $a,b\in\R, a<b,$
+	\begin{equation}
+		f(b)-f(a) = \int_a^b f'(x)dx,
+	\end{equation}
+	since $f'(x)\geq 0, \forall x\in[a,b]$, we have $\int_a^b f'(x)dx\geq 0$, therefore $f(b)\geq f(a)$, which means that $f$ is non-decreasing.
+\end{proof}
+
+
+\begin{proposition}
+Consider $f:\cX\subset\R^d\to\R$ differentiable. The direction of maximum growth of $f$ at $x_0$ is along its gradient $\nabla f(x_0)$
+\end{proposition}
+\begin{proof}
+	Let us consider $x' = x_0 + \rho u$, where $u\in\cX, ||u||=1$, and $\rho>0$ is a small constant. We find the maximum growth direction by maximising $f(x')-f(x_0)$ with respect to $u$. We consider the Taylor expansion
+	\begin{equation}
+		f(x') = f(x_0) + \nabla f(x_0)\rho u  + \mathcal{O}(\rho^2),
+	\end{equation}
+	and thus conclude that $f(x') - f(x_0) \simeq \nabla f(x_0)\rho u$, meaning that the maximum growth can be achieved by choosing $u$ parallel to $\nabla f(x_0)$. That is, $\nabla f(x_0)$ is the direction of maximum growth for $f$ at $x_0$. 
+\end{proof}
+
+
+\begin{theorem}
+Suppose $f:\cX\subset\R^d\to\R$ twice differentiable, then $f$ is convex if and only if $\nabla^2$ is positive semi definite.
+\end{theorem}
+\begin{proof}
+We consider $d=1$. Using the FTC, 
+\begin{equation}
+	f'(b) - f'(a) = \int_a^b f''(x)dx \geq 0,
+ \end{equation}
+ which implies that $f'$ is non-decreasing. Therefore (using FTC again),
+ \begin{equation}
+ 	f(b) - f(a) = \int_a^b f'(x)dx \geq (b-a)f'(a),
+ \end{equation}
+ equivalently, 
+\begin{equation}
+	f(b)\geq f(a)+ (b-a)f'(a), \label{eq:tanget_PD1}
+\end{equation}
+meaning that the function $f$ \emph{is always above its tangent}. Evaluating \eqref{eq:tanget_PD1} for $(a,z)$ and $(b,z)$, where $z=(1-t)a + tb$, we have
+\begin{align}
+	f(z) &\geq f(a) + (z-a)f'(a)\\
+	f(z) &\geq f(b) + (z-b)f'(b).
+\end{align}
+Then, multiplying the above equations by $(1-t)$ and $t$ respectively and summing them, we obtain: 
+\begin{align}
+	f(z) &\geq (1-t)f(a) + tf(b) + (1-t)(tb-ta)f'(a) +t[(1-t)a - (1-t)b]f'(b)\\
+	     &=    (1-t)f(a) + tf(b) + (1-t)t(b-a) [f'(a) - f'(b)]\\
+	     &\geq (1-t)f(a) + tf(b).
+\end{align}
+This concludes the proof. Discuss in class how to extend this to arbitrary dimension $d>1$.
+\end{proof}
+
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: Explore some functions}]
+
+\felipe{Choose some functions, compute the derivative and Hessian, analyse them}
+
+\end{mdframed}
+
+\subsection{First order methods}
+\label{sub:first_order_methods}
+
+In general, finding a minimum by setting $\nabla f(x) = 0$ and solving for $x$ is not possible. For that reason, we will consider iterative methods based on gradients. The idea here is to go \emph{downhill} following the gradient towards the minimum (ignoring the curvature information for now). 
+
+We will specify a starting point $x_0$ and calculate
+
+\begin{equation}
+	x_{t+1} = x_t + \eta_t d_t,
+\end{equation}
+where $\eta_t$ is a \emph{step size} and $d_t$ is a \emph{descent direction}, such as $-\nabla f$. Here, the subindex $\cdot_t$ represents the iteration number (starting from iteration $t=0$). We iterate until convergence, that is, until the elements in the sequence $x_t,x_{t+1}, x_{t+2},\ldots$ become constant (or very similar). If convergence is achieved, we will assume the minimum has been found. 
+
+Note that there are several \emph{descent directions}, that is, directions $d_t$ such that 
+\begin{equation}
+	L( x_t + \eta_t d_t) \leq L(x_t).
+\end{equation}
+In fact, as long as $d_t^\top\nabla f \leq 0$, $d_t$ is a descent direction. Clearly, choosing $d_t = -\nabla f(x_t)$ is the \emph{steepest descent direction}.
+
+
+\subsubsection{Role of the step size}
+\label{ssub:stepsize}
+
+The step size $\eta_t$ is also known as \emph{learning rate}. Furthermore,  we refer to the set $\{\eta_1,\eta_2,\ldots\}$ as the learning rate schedule. We will usually consider a constant learning rate, that is, $\eta_t = \eta$, $\forall t\in\N$. Though this is the simplest choice, there are some concerns to it: if $\eta$ is too large, the iteration may fail to converge; whereas if it is too small, it may not converge at all. 
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: convergence for a parabola}]
+
+Let us consider the function
+\begin{equation}
+	J = (\theta -3)^2.
+\end{equation}
+
+In Figure \ref{fig:parabola_lr} we show how the steepest descent converges/diverges for different learning rates.
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_parabola_lr.pdf}
+    \caption{Gradient based optimisation with different learning rates.}
+    \label{fig:parabola_lr}
+\end{figure}
+
+
+The learning rate is usually tuned based on heuristics. When implementing the rule 
+\begin{equation}
+	x_{t+1} = x_t + \eta \nabla f(x_t),
+\end{equation}
+we will usually set $\eta<||\nabla f||^{-1}$, as this will result in a stable autoregressive system for the sequence $x_t$ (discuss this in class).
+
+
+
+\subsubsection{Momentum}
+\label{ssub:momentum}
+
+In higher dimensions, we want to move faster in some directions and slower in others, depending on the value of the gradient in each coordinate. This can be achieved by: 
+\begin{align}
+	m_t &= \beta m_{t-1} + \nabla f(x_{t-1})\\
+	x_t &= x_{t-1} - \nabla_t m_t,
+\end{align}
+where $m_t$ is a smoothed version of the gradient, and $\beta\in[0,1]$ is a design (memory) parameter. This way, previous values of the gradient have effect on future updates: if a particular coordinate of the gradient is consistently large, then that coordinate receives updates of a higher magnitude. This is particularly useful when the evaluation of the gradient is noisy. Figure \ref{fig:parabola_momentum} shows how learning changes using momentum, with the same learning rates as the previous example.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_parabola_momentum.pdf}
+    \caption{Gradient based optimisation with momentum.}
+    \label{fig:parabola_momentum}
+\end{figure}
+
+\subsubsection{Newton method}
+\label{ssub:newton}
+Newton's method is
+\begin{equation}
+	x_{t+1} = x_t -\eta_t H_t^{-1}\nabla f(x_t),	
+\end{equation}
+where recall that $H_t = \nabla^2 f(x_t)$ denotes the Hessian of $f$ at $x_t$. This update follows from considering the second order approximation of the loss function around the current point, that is: 
+
+\begin{equation}
+	L(x) \simeq L(x_t) + (\nabla f(x_t))^\top(x-x_t) + \frac{1}{2} (x-x_t)^\top H_t  (x-x_t),
+\end{equation}
+the minimum of which is given by 
+\begin{equation}
+	x_\star = x_t - H^{-1}_t\nabla L(x_t),
+\end{equation}
+where the learning rate can also be used to accelerate (or de-accelerate) convergence. 
+
+\noindent\begin{minipage}{0.58\textwidth}
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: convergence for a parabola (2)}]
+
+Let us consider the same parabolic function as before. This time we will use the Newton method presented above.
+
+As shown in Figure \ref{fig:newton_method}, this method converges in one step (for a quadratic function). That is, the update corresponds to the closed form solution of the minimisation problem.
+
+\end{mdframed}
+\end{minipage}\hfill
+\begin{minipage}{0.4\textwidth}
+	\centering
+	\includegraphics[width=\textwidth]{img/optimisation_parabola_newton.pdf}
+	\captionof{figure}{One-step parabola minimisation with the Newton method.}
+	\label{fig:newton_method}
+\end{minipage}
+
+\vspace{1cm}
+
+
+\subsection{Stochastic gradient descent}
+\label{sub:SGD}
+
+
+We now consider stochastic optimisation, where
+\begin{equation}
+	L(x) = \E_{q(z)}L(x,z),
+\end{equation}
+that is, when the loss function is random and we aim to minimise its expected value.  For instance, in linear regression we have $L(\theta)=\E_{q(y|x)}(y-\theta^\top x)$.
+
+In practice, we are unable to compute this expectation since the law $q(z)$ is unknown. However, since we usually have samples of $q$, we can do a sample approximation of the expectation. In fact, we will consider
+\begin{equation}
+	L(\theta) = \frac{1}{N}\sum_{i=1}^nL(x,z_i).
+\end{equation}
+In the linear regression example, this would be $L(\theta) = \frac{1}{N}\sum_{i=1}^n(y_i-\theta^\top x_i)^2.$ 
+
+The gradient is then also approximated using a batch of, say, $B$ samples. That is, 
+
+\begin{equation}
+	\nabla L(\theta)\simeq \frac{1}{N}\sum_{i=1}^B\nabla L(x,z_i).
+\end{equation}
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: random loss function for linear regression}]
+
+Consider a toy example of linear regression where $q(y|x) = \mathcal{N}(y;x,\sigma^2)$ for a given $\sigma >0$. Consequently, we can compare the true expectation (equal to the variance in this case) with the empirical approximation for increasing values of $N$.
+
+Figure \ref{fig:stochastic_loss} shows how the empirical loss changes as we consider more and more samples.
+
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_toy_SGD.pdf}
+    \caption{Estimation of the true loss via the empirical value from data.}
+    \label{fig:stochastic_loss}
+\end{figure}
+
+
+Recall that, in general, we will consider parameter updates of the form 
+\begin{equation}
+	\theta_{t+1} = \theta_t -M_t^{-1} g_t,
+\end{equation}
+where $M_t$ is an estimate of the magnitudes of the coordinates of the gradient $g_t$, as this ensures convergence (or prevents divergence). We next explore some different choices of this estimate.
+
+\subsubsection{Adagrad}
+
+This considers the following iterative rule ($d$ denotes the coordinate):  
+\begin{equation}
+	\theta_{t+1,d} = \theta_{t,d} - \eta_t \frac{1}{\sqrt{s_{t,d}+\epsilon}} g_{t,d},
+\end{equation}
+where $s_{t,d} = \sum_{i=1}^t g_{i,d}^2$. This can also be expressed in vector format as
+\begin{equation}
+	\Delta \theta_t = -\eta_t \frac{1}{s_t} g_t.
+\end{equation}
+The aim of Adagrad is to control the magnitude of the step size for each coordinate of the parameter independently, based on a rolling estimate using previous gradient evaluations. Notice that the computation of $s_{t,d}$ assigns the same importance to all gradient evaluations in time.
+
+
+\subsubsection{RMSProp}
+
+Adagrad might fail to represent the current gradient magnitude by not emphasising current evaluations of the gradient. This can be solved by replacing the sum in the computation of $s_{t,d}$  by a moving average. That is, 
+
+\begin{equation}
+	s_{t+1,d} = \beta s_{t,d} + (1-\beta) g_{t,d}^2,
+\end{equation}
+where the \emph{forgetting factor} $\beta$ is usually chosen close to 0.9. Then, the update rule also follows
+\begin{equation}
+	\Delta \theta_t = -\eta_t \frac{1}{s_t} g_t.
+\end{equation}
+ 
+\subsubsection{Adam}
+
+The de facto optimiser in deep learning is Adam (Adaptive Moment Estimation) proposed by \cite{kingma2015adam}, which combines RMSProp and momentum. Adam's update follows: 
+\begin{align}
+	m_t = \beta_m m_{t-1} + (1-\beta_m) g_{t}\\
+	s_t = \beta_s s_{t-1} + (1-\beta_s) g^2_{t}.
+\end{align}
+Then, 
+\begin{equation}
+	\theta_{t} = \theta_{t-1} - \eta_t \frac{m_t}{\sqrt{s_t} + \epsilon}.
+\end{equation}
+
+
+\begin{mdframed}[style=ejemplo, frametitle={\center Example: different optimisers}]
+	
+We will consider the function
+\begin{equation}
+	f(x,y)=0.1 x^2 + y^2\,.
+\end{equation}
+
+Notice that this function is convex, hence we would expect a reasonable gradient based method to converge. However, the speed and way in which they converge might be different in every case. This text function will illustrate this, since its curvature is much more pronounced along the $y$ axis.
+
+We visualise the effect of the different optimisers presented above in Figure \ref{fig:optimisers}. Notice that SGD converges more slowly than RMSprop and Adam. Adagrad, on the other hand, slows down too early.
+	
+\end{mdframed}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/optimisation_optimisers_comparison.pdf}
+    \caption{Convergence comparison for different optimisers.}
+    \label{fig:optimisers}
+\end{figure}
+
+%%%%%%%%%########
+\subsection{Training and Regularisation of Neural Networks}
+
+\subsubsection{Network Architecture}
+
+The \textbf{architecture} of a neural network refers to its overall structure: number of layers, neurons per layer, connectivity, and activation functions.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=.5]{img/optimisation_nn.png}
+	\caption{A neural network of depth $l$.}
+	\label{fig:dnn}
+\end{figure}
+
+We adopt the following notation (as illustrated in Fig.~\ref{fig:dnn}):
+\begin{equation}
+	h^{(k)} = f^{(k)}(h^{(k-1)}W^{(k)} + b^{(k)}), \quad k \in \{1,\dots,l\}, \quad h^{(0)} = x,
+\end{equation}
+\begin{equation}
+	\hat{y} = g(h^{(l)}U + c),
+\end{equation}
+where $f$ is the activation function for all (hidden) neurons, and $g$ is the activation function of the \textbf{output neurons}. Furthermore, $h^{(k)}$ denotes the output of the $k$-th layer. 
+
+\subsubsection{Cost Function and Output Units}
+
+Unlike linear models, the use of nonlinear activations renders the cost function generally non-convex, so gradient descent does not guarantee convergence to a global optimum. Although least squares may be used, in practice one minimises the negative log-likelihood of a probabilistic model $p(y|\bm{x};\bm{\theta})$:
+\begin{equation}
+	\label{eq:loss_NN_optim}
+	J(\bm{\theta}) = -\E_{(\bm{x},\bm{y}) \sim \hat{p}_{\mathrm{data}}} [\log p_{\mathrm{model}}(\bm{y}|\bm{x})].
+\end{equation}
+The choice of output unit determines the appropriate likelihood and loss:
+\begin{enumerate}
+	\item \textbf{Linear:} $\hat{\bm{y}} = h^{(l)}U + c$  
+	
+	Models $\mathcal{N}(\bm{y}|\hat{\bm{y}}, \bm{I})$ and is equivalent to minimising MSE; suited for regression.
+	
+	\item \textbf{Sigmoid:} $\hat{y} = \mathrm{sig}(h^{(l)}U + c)$  
+	
+	Used for binary classification with $p(y|\bm{x}) = \mathrm{Bernoulli}(y|p)$ and $\hat{y} = p(y=1|\bm{x})$.
+	
+	\item \textbf{Softmax:} $\hat{\bm{y}} = \mathrm{softmax}(h^{(l)}U + c)$  
+	
+	For multiclass problems, with
+	\[
+	\mathrm{softmax}(z)_i = \frac{e^{z_i}}{\sum_j e^{z_j}}.
+	\]
+\end{enumerate}
+
+Recall that, in practice, since $p_{\mathrm{data}}$ in eq.~\eqref{eq:loss_NN_optim} is unknown, we optimise an empirical estimate of that loss given by 
+\begin{equation}
+	\label{eq:loss_NN_optim_emp}
+	J(\bm{\theta}) = -\sum_i \log p_{\mathrm{model}}(\bm{y}_i|\bm{x}_i).
+\end{equation}
+The rest of this section is devoted to the calculation of this loss and its gradient. 
+
+\subsubsection{Forward Propagation}
+
+In a feedforward network, information flows from input $\bm{x}$ to output $\hat{\bm{y}}$. During training, this process computes the cost $J(\bm{X},\bm{\theta})$.
+
+\begin{algorithm}[H]
+	\caption{Forward Propagation}
+	\textbf{Require:} Depth $l$, weights $\bm{W}^{(k)}$, biases $\bm{b}^{(k)}$, input $\bm{x}$, output $\bm{y}$, and output parameters $U$, $c$, $g$.\\
+	\begin{algorithmic}[1]
+		\State $\bm{h}^{(0)} \gets \bm{x}$
+		\For{$k = 1,\dots,l$}
+			\State $\bm{u}^{(k)} \gets \bm{h}^{(k-1)}\bm{W}^{(k)} + \bm{b}^{(k)}$
+			\State $\bm{h}^{(k)} \gets f^{(k)}(\bm{u}^{(k)})$
+		\EndFor
+		\State $\bm{\hat{y}} \gets g(\bm{h}^{(l)}U + c)$
+		\State $J \gets L(\bm{\hat{y}},\bm{y})$
+	\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Backward Propagation – Preliminaries}
+
+The \textbf{backpropagation} algorithm propagates cost information backwards to compute gradients efficiently. In practice, this is achieved by means of \textbf{automatic differentiation}, which provides fast and scalable computation, thus enabling modern deep learning.
+
+Assume training is performed in \textbf{mini-batches} $(x^d)_{d=1}^N$, enabling efficient matrix operations on GPUs. For an MSE loss in regression:
+\[
+J(\bm{X},\bm{\theta}) = \frac{1}{2N}\sum_{d=1}^N (\hat{y}_d - y_d)^2,
+\]
+where $J_d=(\hat{y}_d - y_d)^2$, our goal is to update all weights $w_{ij}^{(k)}$. Using the chain rule:
+\[
+\frac{\partial J_d}{\partial w_{ij}^{(k)}} 
+= \frac{\partial J_d}{\partial u_{dj}^{(k)}} 
+  \frac{\partial u_{dj}^{(k)}}{\partial w_{ij}^{(k)}},
+\]
+where we define the \textbf{error term}
+\[
+\delta_{dj}^{(k)} \equiv \frac{\partial J_d}{\partial u_{dj}^{(k)}},
+\]
+and note that
+\[
+\frac{\partial u_{dj}^{(k)}}{\partial w_{ij}^{(k)}} 
+= h_{di}^{(k-1)}.
+\]
+Hence,
+\[
+\frac{\partial J_d}{\partial w_{ij}^{(k)}} = \delta_{dj}^{(k)} h_{di}^{(k-1)},
+\]
+and the total gradient (ignoring the constant $1/N$ for now) is
+\begin{equation}
+\frac{\partial J}{\partial W^{(k)}} = (h^{(k-1)})^T @ \delta^{(k)}.
+\end{equation}
+
+\subsubsection{Backward Propagation – Hidden Layers}
+
+From the chain rule:
+\[
+\delta_{dj}^{(k)} = \frac{\partial J_d}{\partial u_{dj}^{(k)}} = \sum_{a=1}^{k_{k+1}} \frac{\partial J_d}{\partial u_{da}^{(k+1)}} \frac{\partial u_{da}^{(k+1)}}{\partial u_{dj}^{(k)}} = \sum_{a=1}^{k_{k+1}} \delta_{da}^{(k+1)} \frac{\partial u_{da}^{(k+1)}}{\partial u_{dj}^{(k)}},
+\] 
+where, since $\frac{\partial u_{da}^{(k+1)}}{\partial u_{dj}^{(k)}} = w_{ja}^{(k+1)}f'(u_{dj}^{(k)})$, we have
+
+\[
+\delta_{dj}^{(k)} = f'(u_{dj}^{(k)})\sum_{a=1}^{k_{k+1}}w_{ja}^{(k+1)}\delta_{da}^{(k+1)}.
+\]
+In matrix form:
+\begin{equation}
+\delta^{(k)} = f'(u^{(k)}) * (\delta^{(k+1)} @ (W^{(k+1)})^T).
+\end{equation}
+
+\subsubsection{Backward Propagation – Output Layer}
+
+For a regression problem with linear output and MSE loss:
+\[
+\delta_{d1}^{(l)} = (\hat{y}_d - y_d)(\hat{y}_d)' = (\hat{y}_d - y_d),
+\]
+and with the normalisation term:
+\begin{equation}
+\label{eq:capa_output}
+\delta^{(l)} = \frac{1}{N}(\hat{y} - y).
+\end{equation}
+Furthermore,
+\begin{equation}
+\frac{\partial J}{\partial b^{(k)}} = \mathrm{Sum}_1(\delta^{(k)}), \quad
+\frac{\partial J}{\partial U} = (h^{(l)})^T @ \delta^{(l)}, \quad
+\frac{\partial J}{\partial c} = \mathrm{Sum}_1(\delta^{(l)}),
+\end{equation}
+where $\mathrm{Sum}_1(A)$ denotes summation over the first axis.
+
+\begin{algorithm}[H]
+	\caption{Backward Propagation}
+	\textbf{Require:} Learning rate $\lambda$.\\
+	\begin{algorithmic}[1]
+	\State Perform forward propagation, store $(\hat{y}), (u^{(k)}), (h^{(k)})$.
+	\State Compute output error $\delta^{(l)}$ according to the output unit.
+	\State Update $U \gets U - \lambda \frac{\partial J}{\partial U}$, \quad $c \gets c - \lambda \frac{\partial J}{\partial c}$.
+	\For{$k = l,\dots,1$}
+		\State Compute $\delta^{(k)}$ using the hidden-layer recursion.
+		\State Evaluate $\frac{\partial J}{\partial W^{(k)}}, \frac{\partial J}{\partial b^{(k)}}$.
+		\State Update $W^{(k)} \gets W^{(k)} - \lambda \frac{\partial J}{\partial W^{(k)}}$.
+		\State Update $b^{(k)} \gets b^{(k)} - \lambda \frac{\partial J}{\partial b^{(k)}}$.
+	\EndFor
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{remark}
+	The algorithm is applied to each mini-batch for several \textbf{epochs}. Increasing epochs generally decreases training error, but excessive training may degrade generalisation due to \textbf{overfitting}.
+\end{remark}
+
+\subsubsection{Regularisation}
+
+Neural networks are often large models; controlling their complexity is crucial. \textbf{Regularisation} techniques aim to reduce the generalisation error while retaining sufficient model capacity.
+
+\paragraph{L2 Regularisation.} Adds a quadratic penalty on weights:
+\[
+\tilde{J}(\bm{\theta}) = J(\bm{\theta}) + \frac{\alpha}{2}\|\bm{\theta}\|_2^2.
+\]
+The hyperparameter $\alpha$ controls the regularisation strength. Usually, only weights are penalised, not biases. In practice this corresponds to \textit{weight decay}:
+\[
+W^{(k)} \gets (1-\beta)W^{(k)} - \lambda \frac{\partial J}{\partial W^{(k)}}, \quad \beta = \lambda \alpha.
+\]
+
+
